@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agastya TV</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=Anton&display=swap" rel="stylesheet">
     <style>
         body { background-color: #0a0a0a; color: white; font-family: 'Inter', sans-serif; overflow-x: hidden; }
         
@@ -155,7 +155,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        // FIRESTORE IMPORTS
+        // FIRESTORE
         import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // FIREBASE KEYS
@@ -214,7 +214,7 @@
             const title = document.getElementById('hover-title').innerText;
             const type = document.getElementById('hover-type').innerText;
             const poster = document.getElementById('hover-img').src;
-            window.play(hoveredMovieId, title, poster, type); 
+            window.play(hoveredMovieId, title, poster, type);
         };
 
         // --- AUTH ---
@@ -246,30 +246,26 @@
             } 
         });
 
-        // --- HISTORY LOGIC ---
+        // --- HISTORY LOGIC (DEDUPLICATION FIX) ---
         async function addToHistory(id, title, poster, type) {
             const user = auth.currentUser;
             if(!user) return; 
             const userRef = doc(db, "users", user.uid);
             
             try {
-                // 1. Get current history
                 const docSnap = await getDoc(userRef);
                 let currentHistory = [];
                 if (docSnap.exists() && docSnap.data().watchHistory) {
                     currentHistory = docSnap.data().watchHistory;
                 }
 
-                // 2. Filter out duplicates (remove old entry if exists)
+                // Remove existing if it matches
                 const newHistory = currentHistory.filter(item => item.id !== id);
 
-                // 3. Add new entry to END (so it sorts as newest)
+                // Add to END (so it sorts as newest)
                 newHistory.push({ id, title, poster, type, timestamp: Date.now() });
 
-                // 4. Save
                 await setDoc(userRef, { watchHistory: newHistory }, { merge: true });
-                
-                // 5. Refresh UI
                 loadUserHistory(user.uid);
             } catch(e) { console.log(e); }
         }
@@ -278,8 +274,7 @@
             const docSnap = await getDoc(doc(db, "users", uid));
             if (docSnap.exists() && docSnap.data().watchHistory) {
                 const historyData = docSnap.data().watchHistory;
-                // Newest first
-                historyData.sort((a, b) => b.timestamp - a.timestamp);
+                historyData.sort((a, b) => b.timestamp - a.timestamp); 
                 
                 let histContainer = document.getElementById('history-row-container');
                 const mainContent = document.getElementById('home-content');
@@ -304,7 +299,7 @@
             if (!hasSeenSplash) { document.getElementById('splash-screen').classList.remove('hidden'); setTimeout(() => { document.getElementById('splash-screen').classList.add('fade-out'); setTimeout(() => document.getElementById('splash-screen').style.display = 'none', 500); }, 2000); sessionStorage.setItem('agastya_splash_shown', 'true'); } else { document.getElementById('home-view').classList.add('hidden'); document.getElementById('series-view').classList.add('hidden'); document.getElementById('search-view').classList.add('hidden'); document.getElementById('skeleton-view').classList.remove('hidden'); }
             const randomTheme = HOME_THEMES[Math.floor(Math.random() * HOME_THEMES.length)];
             
-            setTimeout(() => { document.getElementById('skeleton-view').classList.add('hidden'); document.getElementById('home-view').classList.remove('hidden'); }, 5000); 
+            setTimeout(() => { document.getElementById('skeleton-view').classList.add('hidden'); document.getElementById('home-view').classList.remove('hidden'); }, 5000);
 
             loadHome(randomTheme).then(success => { if(!success) loadHome('Avengers'); if (hasSeenSplash) { setTimeout(() => { document.getElementById('skeleton-view').classList.add('hidden'); document.getElementById('home-view').classList.remove('hidden'); }, 500); } else { document.getElementById('home-view').classList.remove('hidden'); } });
         };
@@ -325,9 +320,9 @@
                         setupHero(items[0]);
                         const container = document.getElementById('home-content');
                         // Preserve history
-                        const existingHistory = document.getElementById('history-row-container');
+                        const hRow = document.getElementById('history-row-container');
                         container.innerHTML = ''; 
-                        if(existingHistory) container.appendChild(existingHistory);
+                        if(hRow) container.appendChild(hRow);
 
                         createRowSection(`TOP ${heroTerm.toUpperCase()} TODAY`, items.slice(0, 9), container, true);
                         for(let category of HOME_ROWS) { fetchAndCreateRow(category.title, category.query, container); }
@@ -345,7 +340,7 @@
                 const data = await res.json();
                 if(data.Search) {
                     const items = data.Search.filter(m => m.Poster && m.Poster !== "N/A");
-                    if(items.length > 0) createRowSection(title, items, container, false);
+                    createRowSection(title, items, container, false);
                 }
             } catch(e) {}
         }
@@ -361,6 +356,8 @@
             const safeTitle = m.Title.replace(/'/g, "&apos;").replace(/"/g, "&quot;");
             
             const hoverEvent = `onmouseenter="window.showHoverCard(this, '${m.imdbID}', '${m.Type}', '${safeTitle}', '${m.Year || ''}', '${poster}')" onmouseleave="window.hideHoverCard()"`;
+            
+            // Pass all data for saving
             const clickAttr = `onclick="window.play('${m.imdbID}', '${safeTitle}', '${poster}', '${m.Type}')"`;
 
             if(isRanked) {
@@ -406,13 +403,22 @@
         
         function getImage(url, isHero = false) { if (!url || url === "N/A") return PLACEHOLDER_IMG; if (isHero && url.includes("._V1")) return url.split("._V1")[0] + "._V1.jpg"; return url; }
 
+        function createGridCard(m) { if(!m.Poster || m.Poster === "N/A") return ''; 
+            const safeTitle = m.Title.replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+            return `<div class="group cursor-pointer" onclick="window.play('${m.imdbID}', '${safeTitle}', '${m.Poster}', '${m.Type}')"><div class="relative overflow-hidden rounded-xl aspect-[2/3] mb-3 border border-white/10 shadow-lg bg-gray-800"><img src="${m.Poster}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" onerror="this.closest('.group').remove()"><div class="absolute top-2 right-2 bg-red-600 px-2 py-1 rounded text-[10px] font-bold uppercase">${m.Type}</div></div><h3 class="text-white font-bold truncate group-hover:text-red-500 transition">${m.Title}</h3><p class="text-gray-500 text-sm">${m.Year}</p></div>`; 
+        }
+
         window.routeClick = (id, type) => { window.play(id, 'Loading...', '', type); };
         
-        // GLOBAL PLAY FUNCTION
+        // --- GLOBAL PLAY FUNCTION (MOBILE FRIENDLY + HISTORY) ---
         window.play = (id, title, poster, type) => {
-            addToHistory(id, title, poster, type); // Save
-            if(type === 'series') openSeriesPage(id);
-            else window.openPlayerRaw(`https://www.2embed.cc/embed/${id}`);
+            addToHistory(id, title, poster, type);
+            if(type === 'series' || type === 'tv') openSeriesPage(id);
+            else {
+                // Use VidSrc for mobile compatibility
+                const url = `https://vidsrc.to/embed/movie/${id}`;
+                window.openPlayerRaw(url);
+            }
         };
 
         async function openSeriesPage(id) {
@@ -426,7 +432,7 @@
         }
         window.changeSeason = async (seasonNum) => {
             const list = document.getElementById('episode-list'); list.innerHTML = '<div class="text-center py-8 text-gray-500">Loading episodes...</div>';
-            try { const res = await fetch(`https://www.omdbapi.com/?i=${currentSeriesID}&Season=${seasonNum}&apikey=${API_KEY}`); const data = await res.json(); if(data.Episodes) { list.innerHTML = data.Episodes.map(ep => `<div class="episode-card flex gap-4 p-4 rounded-xl cursor-pointer group items-center" onclick="window.openPlayerRaw('https://www.2embed.cc/embed/${currentSeriesID}/${seasonNum}/${ep.Episode}')"><div class="text-2xl font-bold text-gray-600 w-8 text-center group-hover:text-red-600">${ep.Episode}</div><div class="w-32 h-20 bg-black rounded overflow-hidden shrink-0 relative border border-gray-700"><img src="${currentSeriesPosterUrl}" class="w-full h-full object-cover opacity-50 group-hover:opacity-100 transition" onerror="this.src='${PLACEHOLDER_IMG}'"><div class="absolute inset-0 flex items-center justify-center"><div class="bg-white/10 p-1.5 rounded-full backdrop-blur-sm border border-white/20 group-hover:bg-red-600 group-hover:border-red-600 transition">▶</div></div></div><div class="flex-1"><h3 class="font-bold text-base text-gray-200 group-hover:text-white">${ep.Title}</h3><p class="text-xs text-gray-500 mt-1">${ep.Released}</p></div></div>`).join(''); } else { list.innerHTML = '<div class="text-center py-8 text-red-500">No episodes found.</div>'; } } catch(e) { list.innerHTML = '<div class="text-center py-8 text-red-500">Error.</div>'; }
+            try { const res = await fetch(`https://www.omdbapi.com/?i=${currentSeriesID}&Season=${seasonNum}&apikey=${API_KEY}`); const data = await res.json(); if(data.Episodes) { list.innerHTML = data.Episodes.map(ep => `<div class="episode-card flex gap-4 p-4 rounded-xl cursor-pointer group items-center" onclick="window.openPlayerRaw('https://vidsrc.to/embed/tv/${currentSeriesID}/${seasonNum}/${ep.Episode}')"><div class="text-2xl font-bold text-gray-600 w-8 text-center group-hover:text-red-600">${ep.Episode}</div><div class="w-32 h-20 bg-black rounded overflow-hidden shrink-0 relative border border-gray-700"><img src="${currentSeriesPosterUrl}" class="w-full h-full object-cover opacity-50 group-hover:opacity-100 transition" onerror="this.src='${PLACEHOLDER_IMG}'"><div class="absolute inset-0 flex items-center justify-center"><div class="bg-white/10 p-1.5 rounded-full backdrop-blur-sm border border-white/20 group-hover:bg-red-600 group-hover:border-red-600 transition">▶</div></div></div><div class="flex-1"><h3 class="font-bold text-base text-gray-200 group-hover:text-white">${ep.Title}</h3><p class="text-xs text-gray-500 mt-1">${ep.Released}</p></div></div>`).join(''); } else { list.innerHTML = '<div class="text-center py-8 text-red-500">No episodes found.</div>'; } } catch(e) { list.innerHTML = '<div class="text-center py-8 text-red-500">Error.</div>'; }
         };
         window.openPlayerRaw = (url) => { document.getElementById('player-modal').classList.remove('hidden'); document.getElementById('video-frame').src = url; };
         window.closePlayer = () => { document.getElementById('player-modal').classList.add('hidden'); document.getElementById('video-frame').src = ''; };
@@ -436,4 +442,3 @@
     </script>
 </body>
 </html>
-
