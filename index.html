@@ -206,7 +206,7 @@
         let currentPlaying = { id: null, type: null, season: null, episode: null };
         let activeServer = 'vidlink'; 
         
-        // --- OPTIMIZED ACTIVITY TIMER (Prevents Lag) ---
+        // TIMER
         let lastActivityTime = Date.now();
         let playerCheckInterval;
 
@@ -661,6 +661,9 @@
         };
 
         window.showHoverCard = (elem, id, type, title, year, poster) => {
+            // FIX: Disable on mobile/small screens (Android fix)
+            if (window.innerWidth < 768) return; 
+
             clearTimeout(hoverTimeout);
             hoveredMovieId = id;
             const rect = elem.getBoundingClientRect();
