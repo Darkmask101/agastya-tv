@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agastya TV</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=Anton&display=swap" rel="stylesheet">
     <style>
         body { background-color: #0a0a0a; color: white; font-family: 'Inter', sans-serif; overflow-x: hidden; }
         .hide-scroll::-webkit-scrollbar { display: none; }
@@ -23,9 +23,6 @@
         .menu-fade-enter-active { opacity: 1; transform: translateY(0); transition: all 0.2s ease; }
         #mobile-menu { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .translate-x-full { transform: translateX(100%); } .translate-x-0 { transform: translateX(0); }
-        .loader { border: 4px solid #333; border-top: 4px solid #dc2626; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        img[src=""] { display: none; } img[src="N/A"] { display: none; }
         .auth-input { width: 100%; background: #000; border: 1px solid #333; padding: 12px 16px; border-radius: 8px; color: white; outline: none; transition: border-color 0.2s; }
         .auth-input:focus { border-color: #dc2626; }
         .slider-arrow { position: absolute; top: 0; bottom: 0; width: 50px; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 40; cursor: pointer; opacity: 0; transition: opacity 0.3s ease; }
@@ -128,7 +125,6 @@
     </div>
 
     <div id="search-view" class="hidden min-h-screen pt-32 px-6 pb-20 max-w-7xl mx-auto"><div class="text-center mb-16"><h1 id="browse-title" class="text-4xl font-bold mb-6">Find Your Next Favorite</h1><form id="full-search-form" class="max-w-3xl mx-auto"><div class="bg-[#121212] border border-[#333] rounded-xl flex items-center h-16"><input type="text" id="full-search-input" class="w-full bg-transparent text-white text-xl px-6 focus:outline-none placeholder-gray-600 h-full" placeholder="Search..."><button type="submit" class="bg-red-600 h-full px-8 font-bold hover:bg-red-700 transition uppercase">Search</button></div></form></div><div id="search-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6"></div><div id="scroll-loader" class="hidden text-center py-10"><div class="loader"></div><p class="text-gray-500 text-sm">Loading more content...</p></div></div>
-    
     <div id="series-view" class="hidden min-h-screen bg-[#0a0a0a] pb-20"><div class="relative w-full h-[50vh] flex items-end pb-8 overflow-hidden"><div id="series-bg" class="hero-blur-bg opacity-40"></div><div class="hero-gradient"></div><div class="relative z-10 w-full max-w-6xl mx-auto px-6 flex flex-col md:flex-row gap-8 items-end"><img id="series-poster" class="w-40 h-60 object-cover rounded shadow-2xl border border-white/20 hidden md:block bg-gray-800"><div class="mb-2"><h1 id="series-title" class="text-4xl md:text-6xl font-black mb-2 leading-none">TITLE</h1><div class="flex gap-4 text-sm font-bold text-gray-400 mb-6 items-center"><span id="series-year">2023</span><span class="bg-white/10 px-2 py-0.5 rounded text-white border border-white/10">TV-MA</span><span id="series-seasons" class="text-green-500">1 Seasons</span></div></div></div></div><div class="max-w-6xl mx-auto px-6 mt-8"><div class="flex justify-between items-center mb-6 border-b border-gray-800 pb-4"><h2 class="text-2xl font-bold">Episodes</h2><div class="relative"><select id="season-select" onchange="window.changeSeason(this.value)" class="appearance-none bg-[#1a1a1a] border border-gray-700 text-white pl-4 pr-10 py-2 rounded hover:border-gray-500 focus:outline-none cursor-pointer"></select></div></div><div id="episode-list" class="flex flex-col gap-3"></div></div></div>
     <div id="player-modal" class="fixed inset-0 z-[100] hidden bg-black flex flex-col items-center justify-center"><button onclick="window.closePlayer()" class="absolute top-6 right-8 z-50 bg-black/50 text-white w-12 h-12 rounded-full flex items-center justify-center hover:bg-red-600 transition border border-white/20">✕</button><div class="w-full h-full relative"><iframe id="video-frame" class="w-full h-full" src="" frameborder="0" allowfullscreen allow="autoplay; encrypted-media"></iframe></div></div>
 
@@ -151,6 +147,7 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        // GLOBALS
         const API_KEY = 'e2307776'; 
         const PLACEHOLDER_IMG = "https://via.placeholder.com/300x450/000000/FFFFFF?text=AGASTYA+TV";
         let currentMode = 'home'; let discoveryType = 'movie'; let discoveryIndex = 0; let searchPage = 1; let currentSearchQuery = ''; let isLoading = false; let currentSeriesID = ''; let currentSeriesPosterUrl = ''; let hoverTimeout; let hoveredMovieId = '';
@@ -166,6 +163,7 @@
             { title: "Mind Bending Thrillers", query: "Thriller" }
         ];
 
+        // --- HOVER CARD LOGIC ---
         window.showHoverCard = (element, id, type, title, year, poster) => {
             if(window.innerWidth < 768) return; 
             hoverTimeout = setTimeout(() => {
@@ -193,6 +191,7 @@
             window.play(hoveredMovieId, title, poster, type);
         };
 
+        // --- AUTH ---
         window.openAuthModal = () => { document.getElementById('auth-modal').classList.remove('hidden'); window.switchAuthTab('login'); };
         window.closeAuthModal = () => document.getElementById('auth-modal').classList.add('hidden');
         window.switchAuthTab = (tab) => {
@@ -210,25 +209,33 @@
                 const name = user.displayName || user.email; 
                 authDiv.innerHTML = `<div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-gradient-to-r from-red-600 to-purple-600 flex items-center justify-center text-xs font-bold border border-white/20">${name.charAt(0).toUpperCase()}</div><button onclick="window.logout()" class="text-xs text-gray-400 hover:text-white">Logout</button></div>`; 
                 if(mobBtn) mobBtn.style.display = 'none'; 
+                // LOAD HISTORY ON LOGIN
                 await loadUserHistory(user.uid);
             } else { 
                 authDiv.innerHTML = `<button onclick="window.openAuthModal()" class="text-sm font-bold text-white bg-red-600 px-5 py-2 rounded-full hover:bg-red-700 transition shadow-lg shadow-red-900/20">Sign In</button>`; 
                 if(mobBtn) mobBtn.style.display = 'block'; 
+                // CLEAR HISTORY ROW
                 const hRow = document.getElementById('history-row-container');
                 if(hRow) hRow.remove();
             } 
         });
 
+        // --- HISTORY LOGIC (DEDUPLICATION FIX) ---
         async function addToHistory(id, title, poster, type) {
             const user = auth.currentUser;
             if(!user) return; 
             const userRef = doc(db, "users", user.uid);
+            
             try {
                 const docSnap = await getDoc(userRef);
                 let currentHistory = [];
-                if (docSnap.exists() && docSnap.data().watchHistory) { currentHistory = docSnap.data().watchHistory; }
+                if (docSnap.exists() && docSnap.data().watchHistory) {
+                    currentHistory = docSnap.data().watchHistory;
+                }
+
                 const newHistory = currentHistory.filter(item => item.id !== id);
                 newHistory.push({ id, title, poster, type, timestamp: Date.now() });
+
                 await setDoc(userRef, { watchHistory: newHistory }, { merge: true });
                 loadUserHistory(user.uid);
             } catch(e) { console.log(e); }
@@ -239,13 +246,16 @@
             if (docSnap.exists() && docSnap.data().watchHistory) {
                 const historyData = docSnap.data().watchHistory;
                 historyData.sort((a, b) => b.timestamp - a.timestamp); 
+                
                 let histContainer = document.getElementById('history-row-container');
                 const mainContent = document.getElementById('home-content');
+                
                 if(!histContainer) {
                     histContainer = document.createElement('div');
                     histContainer.id = 'history-row-container';
                     mainContent.prepend(histContainer);
                 }
+                
                 const items = historyData.map(item => ({ imdbID: item.id, Title: item.title, Poster: item.poster, Type: item.type, Year: "" }));
                 if(items.length > 0) {
                     histContainer.innerHTML = '';
@@ -254,11 +264,14 @@
             }
         }
 
+        // --- APP LOGIC ---
         window.initRandomHome = function() {
             const hasSeenSplash = sessionStorage.getItem('agastya_splash_shown');
             if (!hasSeenSplash) { document.getElementById('splash-screen').classList.remove('hidden'); setTimeout(() => { document.getElementById('splash-screen').classList.add('fade-out'); setTimeout(() => document.getElementById('splash-screen').style.display = 'none', 500); }, 2000); sessionStorage.setItem('agastya_splash_shown', 'true'); } else { document.getElementById('home-view').classList.add('hidden'); document.getElementById('series-view').classList.add('hidden'); document.getElementById('search-view').classList.add('hidden'); document.getElementById('skeleton-view').classList.remove('hidden'); }
             const randomTheme = HOME_THEMES[Math.floor(Math.random() * HOME_THEMES.length)];
+            
             setTimeout(() => { document.getElementById('skeleton-view').classList.add('hidden'); document.getElementById('home-view').classList.remove('hidden'); }, 5000);
+
             loadHome(randomTheme).then(success => { if(!success) loadHome('Avengers'); if (hasSeenSplash) { setTimeout(() => { document.getElementById('skeleton-view').classList.add('hidden'); document.getElementById('home-view').classList.remove('hidden'); }, 500); } else { document.getElementById('home-view').classList.remove('hidden'); } });
         };
 
@@ -277,9 +290,11 @@
                     if(items.length > 0) { 
                         setupHero(items[0]);
                         const container = document.getElementById('home-content');
+                        // Preserve history
                         const hRow = document.getElementById('history-row-container');
                         container.innerHTML = ''; 
                         if(hRow) container.appendChild(hRow);
+
                         createRowSection(`TOP ${heroTerm.toUpperCase()} TODAY`, items.slice(0, 9), container, true);
                         for(let category of HOME_ROWS) { fetchAndCreateRow(category.title, category.query, container); }
                         return true; 
@@ -309,17 +324,20 @@
 
         function createCardHTML(m, i, isRanked) {
             const poster = m.Poster !== "N/A" ? m.Poster : PLACEHOLDER_IMG;
-            // CRITICAL FIX: Safe Title for attributes
-            const safeTitle = m.Title.replace(/'/g, "&apos;").replace(/"/g, "&quot;");
-            const jsTitle = m.Title.replace(/'/g, "\\'"); // Escaped for JS strings
+            // SAFE ENCODING: We encode the strings so quotes don't break HTML
+            const safeTitle = encodeURIComponent(m.Title);
+            const safePoster = encodeURIComponent(poster);
+            
+            const hoverEvent = `onmouseenter="window.showHoverCard(this, '${m.imdbID}', '${m.Type}', '${safeTitle}', '${m.Year || ''}', '${safePoster}')" onmouseleave="window.hideHoverCard()"`;
+            const clickAttr = `onclick="window.play('${m.imdbID}', '${safeTitle}', '${safePoster}', '${m.Type}')"`;
 
-            const hoverEvent = `onmouseenter="window.showHoverCard(this, '${m.imdbID}', '${m.Type}', '${safeTitle}', '${m.Year || ''}', '${poster}')" onmouseleave="window.hideHoverCard()"`;
-            const clickAttr = `onclick="window.play('${m.imdbID}', '${jsTitle}', '${poster}', '${m.Type}')"`;
-
+            let inner;
             if(isRanked) {
-                return `<div class="relative min-w-[160px] h-[240px] movie-card group flex-shrink-0" ${hoverEvent} ${clickAttr}><span class="rank-number">${i + 1}</span><img src="${poster}" class="w-full h-full object-cover rounded-lg relative z-10 shadow-xl ml-6 bg-gray-800 border border-white/5" onerror="this.parentElement.remove()"></div>`;
+                inner = `<span class="rank-number">${i + 1}</span><img src="${poster}" class="w-full h-full object-cover rounded-lg relative z-10 shadow-xl ml-6 bg-gray-800 border border-white/5" onerror="this.parentElement.remove()">`;
+                return `<div class="relative min-w-[160px] h-[240px] movie-card group flex-shrink-0" ${hoverEvent} ${clickAttr}>${inner}</div>`;
             } else {
-                return `<div class="min-w-[200px] h-[300px] movie-card relative rounded-xl overflow-hidden cursor-pointer flex-shrink-0 border border-white/5" ${hoverEvent} ${clickAttr}><img src="${poster}" class="w-full h-full object-cover bg-gray-800" onerror="this.parentElement.remove()"><div class="absolute top-2 right-2 bg-black/60 px-2 py-1 rounded text-[10px] font-bold uppercase border border-white/10 backdrop-blur-md">${m.Type}</div></div>`;
+                inner = `<img src="${poster}" class="w-full h-full object-cover bg-gray-800" onerror="this.parentElement.remove()"><div class="absolute top-2 right-2 bg-black/60 px-2 py-1 rounded text-[10px] font-bold uppercase border border-white/10 backdrop-blur-md">${m.Type}</div>`;
+                return `<div class="min-w-[200px] h-[300px] movie-card relative rounded-xl overflow-hidden cursor-pointer flex-shrink-0 border border-white/5" ${hoverEvent} ${clickAttr}>${inner}</div>`;
             }
         }
 
@@ -333,9 +351,10 @@
             document.getElementById('hero-title').innerText = item.Title.toUpperCase();
             document.getElementById('hero-badge-type').innerText = item.Type.toUpperCase();
             
-            // FIX HERO BUTTON CLICK
-            const jsTitle = item.Title.replace(/'/g, "\\'");
-            document.getElementById('hero-play-btn').onclick = () => window.play(item.imdbID, jsTitle, hdUrl, item.Type);
+            // Safe Encoding for Hero Button too
+            const safeTitle = encodeURIComponent(item.Title);
+            const safePoster = encodeURIComponent(hdUrl);
+            document.getElementById('hero-play-btn').onclick = () => window.play(item.imdbID, safeTitle, safePoster, item.Type);
             
             document.getElementById('hero-section').classList.remove('hidden'); document.getElementById('hero-section').classList.add('flex');
         }
@@ -365,24 +384,55 @@
 
         window.routeClick = (id, type) => { window.play(id, 'Loading...', '', type); };
         
-        window.play = (id, title, poster, type) => {
+        // --- CENTRAL PLAY FUNCTION (DECODING ADDED) ---
+        window.play = (id, encodedTitle, encodedPoster, type) => {
+            // 1. Decode the safe strings back to normal text
+            const title = decodeURIComponent(encodedTitle);
+            const poster = decodeURIComponent(encodedPoster);
+
+            // 2. Save to History
             addToHistory(id, title, poster, type);
-            if(type === 'series' || type === 'tv') openSeriesPage(id);
-            else window.openPlayerRaw(`https://vidsrc.to/embed/movie/${id}`);
+
+            // 3. Route to player or series page
+            if (type === 'series' || type === 'tv') {
+                openSeriesPage(id);
+            } else {
+                window.openPlayerRaw(`https://vidsrc.to/embed/movie/${id}`);
+            }
         };
 
         async function openSeriesPage(id) {
             currentSeriesID = id; document.getElementById('home-view').classList.add('hidden'); document.getElementById('search-view').classList.add('hidden'); document.getElementById('series-view').classList.remove('hidden'); window.scrollTo(0,0);
-            const res = await fetch(`https://www.omdbapi.com/?i=${id}&apikey=${API_KEY}`); const data = await res.json();
-            currentSeriesPosterUrl = getImage(data.Poster, true);
-            const bgElement = document.getElementById('series-bg'); const img = new Image(); img.src = currentSeriesPosterUrl;
-            img.onload = () => { bgElement.style.backgroundImage = `url('${currentSeriesPosterUrl}')`; }; img.onerror = () => { bgElement.style.backgroundImage = `url('${PLACEHOLDER_IMG}')`; };
-            document.getElementById('series-poster').src = data.Poster !== "N/A" ? data.Poster : PLACEHOLDER_IMG; document.getElementById('series-title').innerText = data.Title; document.getElementById('series-year').innerText = data.Year; document.getElementById('series-seasons').innerText = data.totalSeasons + " Seasons";
-            const select = document.getElementById('season-select'); select.innerHTML = ''; const seasonCount = parseInt(data.totalSeasons) || 1; for(let i=1; i<=seasonCount; i++) { select.innerHTML += `<option value="${i}">Season ${i}</option>`; } window.changeSeason(1);
+            
+            try {
+                const res = await fetch(`https://www.omdbapi.com/?i=${id}&apikey=${API_KEY}`); 
+                const data = await res.json();
+                
+                // ERROR CHECK: If API fails, handle gracefully
+                if(data.Response === "False") {
+                    alert("Error loading series info: " + data.Error);
+                    return;
+                }
+
+                currentSeriesPosterUrl = getImage(data.Poster, true);
+                const bgElement = document.getElementById('series-bg'); const img = new Image(); img.src = currentSeriesPosterUrl;
+                img.onload = () => { bgElement.style.backgroundImage = `url('${currentSeriesPosterUrl}')`; }; img.onerror = () => { bgElement.style.backgroundImage = `url('${PLACEHOLDER_IMG}')`; };
+                document.getElementById('series-poster').src = data.Poster !== "N/A" ? data.Poster : PLACEHOLDER_IMG; document.getElementById('series-title').innerText = data.Title; document.getElementById('series-year').innerText = data.Year; 
+                
+                const seasons = parseInt(data.totalSeasons);
+                document.getElementById('series-seasons').innerText = (seasons || 1) + " Seasons";
+                
+                const select = document.getElementById('season-select'); select.innerHTML = ''; 
+                for(let i=1; i<=(seasons || 1); i++) { select.innerHTML += `<option value="${i}">Season ${i}</option>`; } 
+                window.changeSeason(1);
+            } catch(e) { console.log(e); }
         }
+
         window.changeSeason = async (seasonNum) => {
             const list = document.getElementById('episode-list'); list.innerHTML = '<div class="text-center py-8 text-gray-500">Loading episodes...</div>';
-            try { const res = await fetch(`https://www.omdbapi.com/?i=${currentSeriesID}&Season=${seasonNum}&apikey=${API_KEY}`); const data = await res.json(); if(data.Episodes) { list.innerHTML = data.Episodes.map(ep => `<div class="episode-card flex gap-4 p-4 rounded-xl cursor-pointer group items-center" onclick="window.openPlayerRaw('https://vidsrc.to/embed/tv/${currentSeriesID}/${seasonNum}/${ep.Episode}')"><div class="text-2xl font-bold text-gray-600 w-8 text-center group-hover:text-red-600">${ep.Episode}</div><div class="w-32 h-20 bg-black rounded overflow-hidden shrink-0 relative border border-gray-700"><img src="${currentSeriesPosterUrl}" class="w-full h-full object-cover opacity-50 group-hover:opacity-100 transition" onerror="this.src='${PLACEHOLDER_IMG}'"><div class="absolute inset-0 flex items-center justify-center"><div class="bg-white/10 p-1.5 rounded-full backdrop-blur-sm border border-white/20 group-hover:bg-red-600 group-hover:border-red-600 transition">▶</div></div></div><div class="flex-1"><h3 class="font-bold text-base text-gray-200 group-hover:text-white">${ep.Title}</h3><p class="text-xs text-gray-500 mt-1">${ep.Released}</p></div></div>`).join(''); } else { list.innerHTML = '<div class="text-center py-8 text-red-500">No episodes found.</div>'; } } catch(e) { list.innerHTML = '<div class="text-center py-8 text-red-500">Error.</div>'; }
+            try { const res = await fetch(`https://www.omdbapi.com/?i=${currentSeriesID}&Season=${seasonNum}&apikey=${API_KEY}`); const data = await res.json(); 
+            if(data.Episodes) { list.innerHTML = data.Episodes.map(ep => `<div class="episode-card flex gap-4 p-4 rounded-xl cursor-pointer group items-center" onclick="window.openPlayerRaw('https://vidsrc.to/embed/tv/${currentSeriesID}/${seasonNum}/${ep.Episode}')"><div class="text-2xl font-bold text-gray-600 w-8 text-center group-hover:text-red-600">${ep.Episode}</div><div class="w-32 h-20 bg-black rounded overflow-hidden shrink-0 relative border border-gray-700"><img src="${currentSeriesPosterUrl}" class="w-full h-full object-cover opacity-50 group-hover:opacity-100 transition" onerror="this.src='${PLACEHOLDER_IMG}'"><div class="absolute inset-0 flex items-center justify-center"><div class="bg-white/10 p-1.5 rounded-full backdrop-blur-sm border border-white/20 group-hover:bg-red-600 group-hover:border-red-600 transition">▶</div></div></div><div class="flex-1"><h3 class="font-bold text-base text-gray-200 group-hover:text-white">${ep.Title}</h3><p class="text-xs text-gray-500 mt-1">${ep.Released}</p></div></div>`).join(''); } 
+            else { list.innerHTML = '<div class="text-center py-8 text-red-500">No episodes found.</div>'; } } catch(e) { list.innerHTML = '<div class="text-center py-8 text-red-500">Error.</div>'; }
         };
         window.openPlayerRaw = (url) => { document.getElementById('player-modal').classList.remove('hidden'); document.getElementById('video-frame').src = url; };
         window.closePlayer = () => { document.getElementById('player-modal').classList.add('hidden'); document.getElementById('video-frame').src = ''; };
