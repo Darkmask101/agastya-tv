@@ -80,7 +80,7 @@
         </div>
         <div class="flex items-center gap-3 md:gap-6 z-50">
             <button onclick="window.startSearchMode()" class="bg-white/10 rounded-full p-2 hover:bg-white/20 transition"><svg class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></button>
-            <div id="auth-section"></div>
+            <div id="auth-section" class="relative"></div>
             <button onclick="window.toggleMobileMenu()" class="md:hidden text-gray-300 hover:text-white focus:outline-none"><svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg></button>
         </div>
     </nav>
@@ -206,7 +206,7 @@
         let currentPlaying = { id: null, type: null, season: null, episode: null };
         let activeServer = 'vidlink'; 
         
-        // TIMER
+        // --- OPTIMIZED ACTIVITY TIMER (Prevents Lag) ---
         let lastActivityTime = Date.now();
         let playerCheckInterval;
 
@@ -235,7 +235,7 @@
             const mobBtn = document.getElementById('mobile-auth-btn'); 
             if (user) { 
                 const name = user.displayName || user.email; 
-                authDiv.innerHTML = `<div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-gradient-to-r from-red-600 to-purple-600 flex items-center justify-center text-xs font-bold border border-white/20">${name.charAt(0).toUpperCase()}</div><button onclick="window.logout()" class="text-xs text-gray-400 hover:text-white">Logout</button></div>`; 
+                authDiv.innerHTML = `<div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-gradient-to-r from-red-600 to-purple-600 flex items-center justify-center text-xs font-bold border border-white/20 cursor-pointer" onclick="window.toggleProfileMenu()">${name.charAt(0).toUpperCase()}</div><div id="profile-menu" class="hidden absolute top-full right-0 mt-4 w-64 bg-[#0F0F0F] border border-[#333] rounded-xl p-4 shadow-2xl backdrop-blur-xl z-50"><div class="text-xs font-bold text-gray-500 mb-2 uppercase tracking-widest">My Stats</div><div class="grid grid-cols-1 gap-1"><div class="flex items-center gap-3 p-3 rounded-lg bg-white/5 transition text-left"><span class="bg-green-600/20 text-green-500 p-2 rounded-md">🎬</span><div class="text-sm font-bold text-gray-200">Movies Watched: <span id="stats-watched" class="text-white">0</span></div></div><div class="flex items-center gap-3 p-3 rounded-lg bg-white/5 transition text-left"><span class="bg-yellow-600/20 text-yellow-500 p-2 rounded-md">⏳</span><div class="text-sm font-bold text-gray-200">Total Movie Hours: <span id="stats-hours" class="text-white">0h</span></div></div></div><div class="mt-4 pt-4 border-t border-[#333]"><button onclick="window.logout()" class="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-white/10 transition text-left text-red-500 font-bold"><span class="bg-red-600/20 p-2 rounded-md">🚪</span>Logout</button></div></div></div>`; 
                 if(mobBtn) mobBtn.style.display = 'none'; 
                 await loadUserHistory(user.uid);
             } else { 
@@ -251,11 +251,22 @@
             if(!user) return; 
             const userRef = doc(db, "users", user.uid);
             try {
+                let runtime = 0;
+                if (type === 'movie') {
+                    try {
+                        const res = await fetch(`${BASE_URL}/movie/${id}?api_key=${API_KEY}`);
+                        const data = await res.json();
+                        runtime = data.runtime || 0;
+                    } catch (e) {
+                        console.error("Error fetching movie runtime:", e);
+                    }
+                }
+
                 const docSnap = await getDoc(userRef);
                 let currentHistory = [];
                 if (docSnap.exists() && docSnap.data().watchHistory) { currentHistory = docSnap.data().watchHistory; }
                 const newHistory = currentHistory.filter(item => item.id != id); 
-                newHistory.push({ id, title, poster, type, timestamp: Date.now() });
+                newHistory.push({ id, title, poster, type, timestamp: Date.now(), runtime: runtime });
                 await setDoc(userRef, { watchHistory: newHistory }, { merge: true });
                 loadUserHistory(user.uid);
             } catch(e) { console.log(e); }
@@ -266,6 +277,9 @@
             if (docSnap.exists() && docSnap.data().watchHistory) {
                 const historyData = docSnap.data().watchHistory;
                 historyData.sort((a, b) => b.timestamp - a.timestamp); 
+                
+                calculateUserStats(historyData);
+
                 let histContainer = document.getElementById('history-row-container');
                 const mainContent = document.getElementById('home-content');
                 if(!histContainer) {
@@ -295,6 +309,29 @@
                    histContainer.innerHTML = '';
                 }
             }
+        }
+
+        function calculateUserStats(historyData) {
+            const watchedElement = document.getElementById('stats-watched');
+            const hoursElement = document.getElementById('stats-hours');
+
+            if (!watchedElement || !hoursElement) return;
+
+            const uniqueMovies = new Set();
+            let totalMinutes = 0;
+
+            historyData.forEach(item => {
+                if (item.type === 'movie') {
+                    uniqueMovies.add(item.id);
+                    totalMinutes += (item.runtime || 0);
+                }
+            });
+
+            const moviesWatched = uniqueMovies.size;
+            const totalHours = (totalMinutes / 60).toFixed(1);
+
+            watchedElement.textContent = moviesWatched;
+            hoursElement.textContent = `${totalHours}h`;
         }
 
         // --- APP LOGIC & API ---
@@ -345,6 +382,7 @@
             container.insertAdjacentHTML('beforeend', html);
         }
 
+        // --- FIXED: CRASH-PROOF CARD GENERATION ---
         function createCardHTML(m, i, isRanked, isGrid = false) {
             const poster = m.isHistory ? m.fullPoster : (m.poster_path ? IMG_BASE + m.poster_path : PLACEHOLDER_IMG);
             const title = m.title || m.name || "Unknown";
@@ -352,11 +390,18 @@
             const year = date.split('-')[0];
             const type = m.media_type || (m.title ? 'movie' : 'tv');
             
-            const safeTitle = title.replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+            // Safe Strings for Data Attributes (HTML Escape Only)
+            const safeTitle = title.replace(/"/g, "&quot;");
+            
+            // JS Click Handler needs escaped quotes
             const jsTitle = title.replace(/'/g, "\\'").replace(/"/g, '&quot;'); 
 
-            const hoverEvent = `onmouseenter="window.showHoverCard(this, '${m.id}', '${type}', '${safeTitle}', '${year}', '${poster}')" onmouseleave="window.hideHoverCard()"`;
+            // FIX: Using data attributes instead of inline JS arguments to prevent quote crashes
+            const hoverEvent = `onmouseenter="window.showHoverCard(this)" onmouseleave="window.hideHoverCard()"`;
             const clickAttr = `onclick="window.play('${m.id}', '${jsTitle}', '${poster}', '${type}')"`;
+            
+            // Store data in DOM
+            const dataAttrs = `data-id="${m.id}" data-type="${type}" data-title="${safeTitle}" data-year="${year}" data-poster="${poster}"`;
 
             let cardClass = "";
             let inner = "";
@@ -372,7 +417,7 @@
                 inner = `<img src="${poster}" class="w-full h-full object-cover bg-gray-800" onerror="this.src='${PLACEHOLDER_IMG}'"><div class="absolute top-2 right-2 bg-black/60 px-2 py-1 rounded text-[10px] font-bold uppercase border border-white/10 backdrop-blur-md">${type === 'tv' ? 'SERIES' : 'MOVIE'}</div>`;
             }
 
-            return `<div class="${cardClass}" ${hoverEvent} ${clickAttr}>${inner}</div>`;
+            return `<div class="${cardClass}" ${dataAttrs} ${hoverEvent} ${clickAttr}>${inner}</div>`;
         }
 
         function setupHero(item) {
@@ -488,8 +533,6 @@
         window.openPlayerModal = () => {
             document.getElementById('player-modal').classList.remove('hidden');
             updateServerUI();
-            
-            // Start Lightweight Activity Listener
             startPlayerActivityTracking();
         }
 
@@ -531,7 +574,6 @@
         }
         
         // --- LAG-FREE ACTIVITY TRACKER ---
-        
         function updateLastActivity() {
             lastActivityTime = Date.now();
             const controls = document.getElementById('player-controls');
@@ -547,23 +589,18 @@
         }
 
         function startPlayerActivityTracking() {
-            // Update timestamp on interaction (Cheap operation)
             window.addEventListener('mousemove', updateLastActivity);
             window.addEventListener('click', updateLastActivity);
             window.addEventListener('keydown', updateLastActivity);
             window.addEventListener('touchstart', updateLastActivity);
 
-            // Check timestamp every 1s (Not every frame)
             if(playerCheckInterval) clearInterval(playerCheckInterval);
-            
             playerCheckInterval = setInterval(() => {
-                if (Date.now() - lastActivityTime > 3000) { // 3 seconds idle
+                if (Date.now() - lastActivityTime > 3000) { 
                     const controls = document.getElementById('player-controls');
                     const btn = document.getElementById('switch-btn');
-                    
                     if(controls && !controls.classList.contains('opacity-0')) {
                         controls.classList.add('opacity-0');
-                        // Disable clicks on button when hidden so it doesn't block video
                         if(btn) {
                             btn.classList.remove('pointer-events-auto');
                             btn.classList.add('pointer-events-none');
@@ -652,7 +689,6 @@
             document.getElementById('player-modal').classList.add('hidden'); 
             document.getElementById('video-frame').src = '';
             
-            // Clean up listeners
             window.removeEventListener('mousemove', updateLastActivity);
             window.removeEventListener('click', updateLastActivity);
             window.removeEventListener('keydown', updateLastActivity);
@@ -660,25 +696,33 @@
             clearInterval(playerCheckInterval);
         };
 
-        window.showHoverCard = (elem, id, type, title, year, poster) => {
+        // --- FIXED: READS FROM DATA ATTRIBUTES TO PREVENT CRASHES ---
+        window.showHoverCard = (elem) => {
             // FIX: Disable on mobile/small screens (Android fix)
             if (window.innerWidth < 768) return; 
 
             clearTimeout(hoverTimeout);
+            const { id, type, title, year, poster } = elem.dataset;
             hoveredMovieId = id;
+            
             const rect = elem.getBoundingClientRect();
             const modal = document.getElementById('hover-modal');
             const img = document.getElementById('hover-img');
+            
             img.src = poster;
             document.getElementById('hover-title').innerText = title;
             document.getElementById('hover-year').innerText = year;
             document.getElementById('hover-type').innerText = type;
+            
             let top = rect.top + window.scrollY - 20;
             let left = rect.left + window.scrollX - 20;
+            
             if(left + 280 > window.innerWidth) left = window.innerWidth - 300;
             if(left < 0) left = 10;
+            
             modal.style.top = `${top}px`;
             modal.style.left = `${left}px`;
+            
             hoverTimeout = setTimeout(() => { modal.classList.add('active'); }, 400);
         };
         
@@ -687,9 +731,17 @@
 
         window.toggleMenu = () => { document.getElementById('browse-menu').classList.toggle('hidden'); document.getElementById('browse-menu').classList.add('menu-fade-enter-active'); };
         window.toggleMobileMenu = () => { const m = document.getElementById('mobile-menu'); m.classList.toggle('translate-x-full'); m.classList.toggle('translate-x-0'); };
-        window.onclick = (e) => { if (!e.target.closest('button')) document.getElementById('browse-menu').classList.add('hidden'); };
+        window.onclick = (e) => { 
+            if (!e.target.closest('button')) document.getElementById('browse-menu').classList.add('hidden'); 
+            if (!e.target.closest('#auth-section')) document.getElementById('profile-menu')?.classList.add('hidden');
+        };
         window.scrollRow = (id, direction) => { const row = document.getElementById(id); const amount = 500; if(direction === 'left') row.scrollLeft -= amount; else row.scrollLeft += amount; };
         
+        window.toggleProfileMenu = () => {
+            document.getElementById('profile-menu').classList.toggle('hidden');
+            document.getElementById('profile-menu').classList.add('menu-fade-enter-active');
+        };
+
         window.initRandomHome();
     </script>
 </body>
