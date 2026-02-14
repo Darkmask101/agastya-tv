@@ -147,22 +147,7 @@
     <div id="search-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-6"></div><div id="scroll-loader" class="hidden text-center py-10"><div class="loader"></div><p class="text-gray-500 text-sm">Loading more content...</p></div></div>
     
     <div id="series-view" class="hidden min-h-screen bg-[#0a0a0a] pb-20"><div class="relative w-full h-[50vh] flex items-end pb-8 overflow-hidden"><div id="series-bg" class="hero-blur-bg opacity-40"></div><div class="hero-gradient"></div><div class="relative z-10 w-full max-w-6xl mx-auto px-6 flex flex-col md:flex-row gap-8 items-end"><img id="series-poster" class="w-40 h-60 object-cover rounded shadow-2xl border border-white/20 hidden md:block bg-gray-800"><div class="mb-2"><h1 id="series-title" class="text-4xl md:text-6xl font-black mb-2 leading-none"></h1><div class="flex gap-4 text-sm font-bold text-gray-400 mb-6 items-center"><span id="series-year"></span><span class="bg-white/10 px-2 py-0.5 rounded text-white border border-white/10">TV-MA</span><span id="series-seasons" class="text-green-500"></span></div></div></div></div><div class="max-w-6xl mx-auto px-6 mt-8"><div class="flex justify-between items-center mb-6 border-b border-gray-800 pb-4"><h2 class="text-2xl font-bold">Episodes</h2><div class="relative"><select id="season-select" onchange="window.changeSeason(this.value)" class="appearance-none bg-[#1a1a1a] border border-gray-700 text-white pl-4 pr-10 py-2 rounded hover:border-gray-500 focus:outline-none cursor-pointer"></select></div></div><div id="episode-list" class="flex flex-col gap-3"></div></div></div>
-    
-    <div id="player-modal" class="fixed inset-0 z-[100] hidden bg-black flex flex-col items-center justify-center">
-        <button onclick="window.closePlayer()" class="absolute top-6 right-8 z-50 bg-black/50 text-white w-12 h-12 rounded-full flex items-center justify-center hover:bg-red-600 transition border border-white/20">✕</button>
-        
-        <div class="w-full h-full relative">
-            <iframe id="video-frame" class="w-full h-full" src="" frameborder="0" allowfullscreen allow="autoplay; encrypted-media"></iframe>
-            
-            <div class="absolute bottom-10 left-0 w-full flex justify-center z-40 pointer-events-none">
-                <button onclick="window.switchServer()" class="pointer-events-auto bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/10 text-white px-4 py-2 rounded-full text-xs md:text-sm font-bold flex items-center gap-2 transition shadow-xl hover:scale-105 cursor-pointer">
-                    <span id="server-name" class="text-green-400">● VidLink</span> 
-                    <span class="text-gray-500">|</span> 
-                    <span>☁️ Switch</span>
-                </button>
-            </div>
-        </div>
-    </div>
+    <div id="player-modal" class="fixed inset-0 z-[100] hidden bg-black flex flex-col items-center justify-center"><button onclick="window.closePlayer()" class="absolute top-6 right-8 z-50 bg-black/50 text-white w-12 h-12 rounded-full flex items-center justify-center hover:bg-red-600 transition border border-white/20">✕</button><div class="w-full h-full relative"><iframe id="video-frame" class="w-full h-full" src="" frameborder="0" allowfullscreen allow="autoplay; encrypted-media"></iframe></div></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -201,10 +186,6 @@
         let currentSeriesPosterUrl = ''; 
         let hoverTimeout; 
         let hoveredMovieId = '';
-
-        // PLAYER STATE
-        let currentPlaying = { id: null, type: null, season: null, episode: null };
-        let activeServer = 'vidlink'; // 'vidlink' or 'vidsrc'
         
         const HOME_THEMES = ['Avengers', 'Batman', 'Spider-Man', 'Harry Potter', 'Star Wars', 'John Wick'];
         const HOME_ROWS = [
@@ -270,6 +251,7 @@
                     mainContent.prepend(histContainer);
                 }
                 
+                // FILTER: Only keep items with numeric IDs (TMDB) to avoid crashing the player with old OMDb IDs
                 const validItems = historyData.filter(item => {
                     const idStr = String(item.id);
                     return !idStr.startsWith('tt') && !isNaN(item.id);
@@ -348,7 +330,9 @@
             const year = date.split('-')[0];
             const type = m.media_type || (m.title ? 'movie' : 'tv');
             
+            // Safe Strings for onClick
             const safeTitle = title.replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+            // ESCAPE QUOTES FOR JS FUNCTION CALL
             const jsTitle = title.replace(/'/g, "\\'").replace(/"/g, '&quot;'); 
 
             const hoverEvent = `onmouseenter="window.showHoverCard(this, '${m.id}', '${type}', '${safeTitle}', '${year}', '${poster}')" onmouseleave="window.hideHoverCard()"`;
@@ -461,78 +445,22 @@
             document.getElementById('scroll-loader').classList.add('hidden'); 
         }
         
-        // --- IMPROVED PLAYER LOGIC ---
-        
         window.play = (id, title, poster, type) => {
             addToHistory(id, title, poster, type);
             if(type === 'series' || type === 'tv') {
                 openSeriesPage(id);
             } else {
-                // Initialize Movie Player
-                currentPlaying = { id: id, type: 'movie', season: null, episode: null };
-                activeServer = 'vidlink'; // Default preference
-                openPlayerModal();
-                loadServer();
+                // Switch to embed.su for movies
+                window.openPlayerRaw(`https://embed.su/embed/movie/${id}`);
             }
         };
-
-        window.playEpisode = (season, episode) => {
-            currentPlaying = { id: currentSeriesID, type: 'tv', season: season, episode: episode };
-            activeServer = 'vidlink'; // Default preference
-            openPlayerModal();
-            loadServer();
-        }
-
-        window.openPlayerModal = () => {
-            document.getElementById('player-modal').classList.remove('hidden');
-            updateServerUI();
-        }
-
-        window.switchServer = () => {
-            // Toggle between servers
-            activeServer = (activeServer === 'vidlink') ? 'vidsrc' : 'vidlink';
-            updateServerUI();
-            loadServer();
-        }
-
-        function updateServerUI() {
-            const label = document.getElementById('server-name');
-            if(activeServer === 'vidlink') {
-                label.innerText = "● VidLink (Fast/Clean)";
-                label.className = "text-green-400";
-            } else {
-                label.innerText = "● VidSrc (Reliable/Ads)";
-                label.className = "text-yellow-400";
-            }
-        }
-
-        function loadServer() {
-            const frame = document.getElementById('video-frame');
-            let url = "";
-
-            if (activeServer === 'vidlink') {
-                if(currentPlaying.type === 'movie') {
-                    url = `https://vidlink.pro/movie/${currentPlaying.id}`;
-                } else {
-                    url = `https://vidlink.pro/tv/${currentPlaying.id}/${currentPlaying.season}/${currentPlaying.episode}`;
-                }
-            } else {
-                // VidSrc Fallback
-                if(currentPlaying.type === 'movie') {
-                    url = `https://vidsrc.xyz/embed/movie/${currentPlaying.id}`;
-                } else {
-                    url = `https://vidsrc.xyz/embed/tv/${currentPlaying.id}/${currentPlaying.season}/${currentPlaying.episode}`;
-                }
-            }
-            frame.src = url;
-        }
 
         async function openSeriesPage(id) {
             currentSeriesID = id; 
             document.getElementById('home-view').classList.add('hidden'); 
             document.getElementById('search-view').classList.add('hidden'); 
             
-            // Clear previous data
+            // Clear previous data before showing
             document.getElementById('series-title').innerText = "";
             document.getElementById('series-year').innerText = "";
             document.getElementById('series-seasons').innerText = "";
@@ -545,8 +473,10 @@
                 const res = await fetch(`${BASE_URL}/tv/${id}?api_key=${API_KEY}`); 
                 const data = await res.json();
                 
+                // If ID is bad or API fails
                 if(!data || data.success === false) { 
-                    alert("Error loading series info."); 
+                    alert("Error loading series info. This item might be from an old version. Please use Search to find it again."); 
+                    // Go back home if error
                     window.initRandomHome();
                     return; 
                 }
@@ -581,7 +511,10 @@
                 if(data.episodes && data.episodes.length > 0) { 
                     list.innerHTML = data.episodes.map(ep => {
                         const epImg = ep.still_path ? IMG_BASE + ep.still_path : currentSeriesPosterUrl;
-                        return `<div class="episode-card flex gap-4 p-4 rounded-xl cursor-pointer group items-center" onclick="window.playEpisode('${seasonNum}', '${ep.episode_number}')">
+                        // Updated URL to embed.su format
+                        const embedUrl = `https://embed.su/embed/tv/${currentSeriesID}/${seasonNum}/${ep.episode_number}`;
+                        
+                        return `<div class="episode-card flex gap-4 p-4 rounded-xl cursor-pointer group items-center" onclick="window.openPlayerRaw('${embedUrl}')">
                                     <div class="text-2xl font-bold text-gray-600 w-8 text-center group-hover:text-red-600">${ep.episode_number}</div>
                                     <div class="w-32 h-20 bg-black rounded overflow-hidden shrink-0 relative border border-gray-700 hidden md:block">
                                         <img src="${epImg}" class="w-full h-full object-cover opacity-50 group-hover:opacity-100 transition" onerror="this.src='${PLACEHOLDER_IMG}'">
@@ -603,10 +536,8 @@
             }
         };
         
-        window.closePlayer = () => { 
-            document.getElementById('player-modal').classList.add('hidden'); 
-            document.getElementById('video-frame').src = ''; 
-        };
+        window.openPlayerRaw = (url) => { document.getElementById('player-modal').classList.remove('hidden'); document.getElementById('video-frame').src = url; };
+        window.closePlayer = () => { document.getElementById('player-modal').classList.add('hidden'); document.getElementById('video-frame').src = ''; };
 
         window.showHoverCard = (elem, id, type, title, year, poster) => {
             clearTimeout(hoverTimeout);
