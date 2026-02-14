@@ -8,27 +8,43 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=Anton&display=swap" rel="stylesheet">
     <style>
         body { background-color: #0a0a0a; color: white; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        
+        /* UTILS */
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
         .nav-blur { background: rgba(0,0,0,0.8); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.05); }
+        
+        /* HERO & BG */
         .hero-blur-bg { position: absolute; inset: -50px; background-size: cover; background-position: center; filter: blur(60px) brightness(0.25); z-index: 0; transform: scale(1.1); transition: background-image 0.5s ease-in-out; }
         .hero-gradient { position: absolute; inset: 0; background: linear-gradient(to top, #0a0a0a 10%, transparent 100%); z-index: 1; }
+        
+        /* ANIMATIONS */
         @keyframes breathe { 0%, 100% { transform: scale(1); text-shadow: 0 0 20px rgba(220, 38, 38, 0.5); } 50% { transform: scale(1.05); text-shadow: 0 0 40px rgba(220, 38, 38, 0.8); } }
         .animate-breathe { animation: breathe 3s infinite ease-in-out; }
+        .skeleton { background-color: #1f1f1f; animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        
+        /* CARDS */
         .episode-card { background-color: #181818; border: 1px solid #333; transition: all 0.2s ease; }
         .episode-card:hover { background-color: #222; border-color: #555; transform: scale(1.01); }
-        .movie-card { transition: transform 0.3s ease; z-index: 10; position: relative; }
-        .movie-card:hover { transform: scale(1.05); z-index: 20; cursor: pointer; }
+        .movie-card { transition: transform 0.3s ease; z-index: 10; position: relative; cursor: pointer; }
+        .movie-card:hover { transform: scale(1.05); z-index: 20; }
         .rank-number { font-size: 180px; font-weight: 900; line-height: 1; -webkit-text-stroke: 4px #333; color: transparent; position: absolute; left: -20px; bottom: -20px; z-index: 0; font-family: impact, sans-serif; opacity: 0.5; }
+        
+        /* MENUS & UI */
         .menu-fade-enter-active { opacity: 1; transform: translateY(0); transition: all 0.2s ease; }
         #mobile-menu { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .translate-x-full { transform: translateX(100%); } .translate-x-0 { transform: translateX(0); }
         .auth-input { width: 100%; background: #000; border: 1px solid #333; padding: 12px 16px; border-radius: 8px; color: white; outline: none; transition: border-color 0.2s; }
         .auth-input:focus { border-color: #dc2626; }
+        
+        /* SLIDERS */
         .slider-arrow { position: absolute; top: 0; bottom: 0; width: 50px; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 40; cursor: pointer; opacity: 0; transition: opacity 0.3s ease; }
         .group:hover .slider-arrow { opacity: 1; }
         .right-arrow { right: 0; background: linear-gradient(to left, #000, transparent); }
         .left-arrow { left: 0; background: linear-gradient(to right, #000, transparent); }
+
+        /* HOVER MODAL */
         #hover-modal { position: fixed; z-index: 100; background-color: #141414; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.7); width: 320px; overflow: hidden; opacity: 0; pointer-events: none; transform: scale(0.9); transition: opacity 0.2s ease, transform 0.2s ease; }
         #hover-modal.active { opacity: 1; pointer-events: auto; transform: scale(1.1); }
     </style>
@@ -125,6 +141,7 @@
     </div>
 
     <div id="search-view" class="hidden min-h-screen pt-32 px-6 pb-20 max-w-7xl mx-auto"><div class="text-center mb-16"><h1 id="browse-title" class="text-4xl font-bold mb-6">Find Your Next Favorite</h1><form id="full-search-form" class="max-w-3xl mx-auto"><div class="bg-[#121212] border border-[#333] rounded-xl flex items-center h-16"><input type="text" id="full-search-input" class="w-full bg-transparent text-white text-xl px-6 focus:outline-none placeholder-gray-600 h-full" placeholder="Search..."><button type="submit" class="bg-red-600 h-full px-8 font-bold hover:bg-red-700 transition uppercase">Search</button></div></form></div><div id="search-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6"></div><div id="scroll-loader" class="hidden text-center py-10"><div class="loader"></div><p class="text-gray-500 text-sm">Loading more content...</p></div></div>
+    
     <div id="series-view" class="hidden min-h-screen bg-[#0a0a0a] pb-20"><div class="relative w-full h-[50vh] flex items-end pb-8 overflow-hidden"><div id="series-bg" class="hero-blur-bg opacity-40"></div><div class="hero-gradient"></div><div class="relative z-10 w-full max-w-6xl mx-auto px-6 flex flex-col md:flex-row gap-8 items-end"><img id="series-poster" class="w-40 h-60 object-cover rounded shadow-2xl border border-white/20 hidden md:block bg-gray-800"><div class="mb-2"><h1 id="series-title" class="text-4xl md:text-6xl font-black mb-2 leading-none">TITLE</h1><div class="flex gap-4 text-sm font-bold text-gray-400 mb-6 items-center"><span id="series-year">2023</span><span class="bg-white/10 px-2 py-0.5 rounded text-white border border-white/10">TV-MA</span><span id="series-seasons" class="text-green-500">1 Seasons</span></div></div></div></div><div class="max-w-6xl mx-auto px-6 mt-8"><div class="flex justify-between items-center mb-6 border-b border-gray-800 pb-4"><h2 class="text-2xl font-bold">Episodes</h2><div class="relative"><select id="season-select" onchange="window.changeSeason(this.value)" class="appearance-none bg-[#1a1a1a] border border-gray-700 text-white pl-4 pr-10 py-2 rounded hover:border-gray-500 focus:outline-none cursor-pointer"></select></div></div><div id="episode-list" class="flex flex-col gap-3"></div></div></div>
     <div id="player-modal" class="fixed inset-0 z-[100] hidden bg-black flex flex-col items-center justify-center"><button onclick="window.closePlayer()" class="absolute top-6 right-8 z-50 bg-black/50 text-white w-12 h-12 rounded-full flex items-center justify-center hover:bg-red-600 transition border border-white/20">✕</button><div class="w-full h-full relative"><iframe id="video-frame" class="w-full h-full" src="" frameborder="0" allowfullscreen allow="autoplay; encrypted-media"></iframe></div></div>
 
@@ -147,49 +164,19 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // GLOBALS
-        const API_KEY = 'e2307776'; 
+        // KEYS & FALLBACKS
+        const KEYS = ['e2307776', 'b6b0922e']; // Rotates keys if one fails
+        let keyIndex = 0;
         const PLACEHOLDER_IMG = "https://via.placeholder.com/300x450/000000/FFFFFF?text=AGASTYA+TV";
         let currentMode = 'home'; let discoveryType = 'movie'; let discoveryIndex = 0; let searchPage = 1; let currentSearchQuery = ''; let isLoading = false; let currentSeriesID = ''; let currentSeriesPosterUrl = ''; let hoverTimeout; let hoveredMovieId = '';
         
-        const HOME_THEMES = ['Avengers', 'Batman', 'Spider-Man', 'Harry Potter', 'Star Wars', 'John Wick', 'Fast and Furious', 'Jurassic Park', 'Mission Impossible', 'Transformers', 'Pirates of the Caribbean', 'Hunger Games', 'Matrix', 'Lord of the Rings', 'Godzilla', 'James Bond', 'Rocky', 'Terminator', 'X-Men', 'Toy Story', 'Shrek', 'Ice Age', 'Despicable Me', 'Kung Fu Panda', 'Incredibles', 'Stranger Things', 'Breaking Bad', 'Game of Thrones', 'The Boys', 'Walking Dead', 'Mandalorian'];
-        const DISCOVERY_KEYWORDS = ['Action', 'Comedy', 'Horror', 'Sci-Fi', 'Thriller', 'Romance', 'Adventure', 'Mystery', 'Drama', 'Fantasy', 'Animation'];
-        const ANIME_KEYWORDS = ['Naruto', 'One Piece', 'Bleach', 'Dragon Ball', 'Attack on Titan', 'Demon Slayer', 'Jujutsu Kaisen'];
+        const HOME_THEMES = ['Avengers', 'Batman', 'Spider-Man', 'Harry Potter', 'Star Wars', 'John Wick'];
+        const DISCOVERY_KEYWORDS = ['Action', 'Comedy', 'Horror', 'Sci-Fi', 'Thriller'];
         const HOME_ROWS = [
             { title: "Love is in the Air", query: "Romance" },
             { title: "Films to Cheer You Up", query: "Comedy" },
-            { title: "Emotional Rollercoasters", query: "Drama" },
-            { title: "High Octane Action", query: "Action" },
-            { title: "Mind Bending Thrillers", query: "Thriller" }
+            { title: "High Octane Action", query: "Action" }
         ];
-
-        // --- HOVER CARD LOGIC ---
-        window.showHoverCard = (element, id, type, title, year, poster) => {
-            if(window.innerWidth < 768) return; 
-            hoverTimeout = setTimeout(() => {
-                const modal = document.getElementById('hover-modal');
-                const rect = element.getBoundingClientRect();
-                const cardCenterX = rect.left + (rect.width / 2);
-                document.getElementById('hover-img').src = poster;
-                document.getElementById('hover-title').innerText = title;
-                document.getElementById('hover-year').innerText = year;
-                document.getElementById('hover-type').innerText = type;
-                hoveredMovieId = id; 
-                let leftPos = cardCenterX - 160; 
-                if (leftPos + 320 > window.innerWidth) leftPos = window.innerWidth - 340;
-                if (leftPos < 20) leftPos = 20;
-                modal.style.top = `${rect.top - 20}px`; 
-                modal.style.left = `${leftPos}px`;
-                modal.classList.add('active');
-            }, 400); 
-        };
-        window.hideHoverCard = () => { clearTimeout(hoverTimeout); document.getElementById('hover-modal').classList.remove('active'); };
-        window.playHovered = () => { 
-            const title = document.getElementById('hover-title').innerText;
-            const type = document.getElementById('hover-type').innerText;
-            const poster = document.getElementById('hover-img').src;
-            window.play(hoveredMovieId, title, poster, type);
-        };
 
         // --- AUTH ---
         window.openAuthModal = () => { document.getElementById('auth-modal').classList.remove('hidden'); window.switchAuthTab('login'); };
@@ -209,33 +196,25 @@
                 const name = user.displayName || user.email; 
                 authDiv.innerHTML = `<div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-gradient-to-r from-red-600 to-purple-600 flex items-center justify-center text-xs font-bold border border-white/20">${name.charAt(0).toUpperCase()}</div><button onclick="window.logout()" class="text-xs text-gray-400 hover:text-white">Logout</button></div>`; 
                 if(mobBtn) mobBtn.style.display = 'none'; 
-                // LOAD HISTORY ON LOGIN
                 await loadUserHistory(user.uid);
             } else { 
                 authDiv.innerHTML = `<button onclick="window.openAuthModal()" class="text-sm font-bold text-white bg-red-600 px-5 py-2 rounded-full hover:bg-red-700 transition shadow-lg shadow-red-900/20">Sign In</button>`; 
                 if(mobBtn) mobBtn.style.display = 'block'; 
-                // CLEAR HISTORY ROW
                 const hRow = document.getElementById('history-row-container');
                 if(hRow) hRow.remove();
             } 
         });
 
-        // --- HISTORY LOGIC (DEDUPLICATION FIX) ---
         async function addToHistory(id, title, poster, type) {
             const user = auth.currentUser;
             if(!user) return; 
             const userRef = doc(db, "users", user.uid);
-            
             try {
                 const docSnap = await getDoc(userRef);
                 let currentHistory = [];
-                if (docSnap.exists() && docSnap.data().watchHistory) {
-                    currentHistory = docSnap.data().watchHistory;
-                }
-
+                if (docSnap.exists() && docSnap.data().watchHistory) { currentHistory = docSnap.data().watchHistory; }
                 const newHistory = currentHistory.filter(item => item.id !== id);
                 newHistory.push({ id, title, poster, type, timestamp: Date.now() });
-
                 await setDoc(userRef, { watchHistory: newHistory }, { merge: true });
                 loadUserHistory(user.uid);
             } catch(e) { console.log(e); }
@@ -246,16 +225,13 @@
             if (docSnap.exists() && docSnap.data().watchHistory) {
                 const historyData = docSnap.data().watchHistory;
                 historyData.sort((a, b) => b.timestamp - a.timestamp); 
-                
                 let histContainer = document.getElementById('history-row-container');
                 const mainContent = document.getElementById('home-content');
-                
                 if(!histContainer) {
                     histContainer = document.createElement('div');
                     histContainer.id = 'history-row-container';
                     mainContent.prepend(histContainer);
                 }
-                
                 const items = historyData.map(item => ({ imdbID: item.id, Title: item.title, Poster: item.poster, Type: item.type, Year: "" }));
                 if(items.length > 0) {
                     histContainer.innerHTML = '';
@@ -264,37 +240,46 @@
             }
         }
 
-        // --- APP LOGIC ---
+        // --- APP LOGIC & API ---
         window.initRandomHome = function() {
             const hasSeenSplash = sessionStorage.getItem('agastya_splash_shown');
             if (!hasSeenSplash) { document.getElementById('splash-screen').classList.remove('hidden'); setTimeout(() => { document.getElementById('splash-screen').classList.add('fade-out'); setTimeout(() => document.getElementById('splash-screen').style.display = 'none', 500); }, 2000); sessionStorage.setItem('agastya_splash_shown', 'true'); } else { document.getElementById('home-view').classList.add('hidden'); document.getElementById('series-view').classList.add('hidden'); document.getElementById('search-view').classList.add('hidden'); document.getElementById('skeleton-view').classList.remove('hidden'); }
-            const randomTheme = HOME_THEMES[Math.floor(Math.random() * HOME_THEMES.length)];
             
-            setTimeout(() => { document.getElementById('skeleton-view').classList.add('hidden'); document.getElementById('home-view').classList.remove('hidden'); }, 5000);
+            setTimeout(() => { document.getElementById('skeleton-view').classList.add('hidden'); document.getElementById('home-view').classList.remove('hidden'); }, 3000);
 
-            loadHome(randomTheme).then(success => { if(!success) loadHome('Avengers'); if (hasSeenSplash) { setTimeout(() => { document.getElementById('skeleton-view').classList.add('hidden'); document.getElementById('home-view').classList.remove('hidden'); }, 500); } else { document.getElementById('home-view').classList.remove('hidden'); } });
+            // TRY LOADING
+            const randomTheme = HOME_THEMES[Math.floor(Math.random() * HOME_THEMES.length)];
+            attemptLoad(randomTheme);
         };
 
-        window.toggleMenu = () => { document.getElementById('browse-menu').classList.toggle('hidden'); document.getElementById('browse-menu').classList.add('menu-fade-enter-active'); };
-        window.toggleMobileMenu = () => { const m = document.getElementById('mobile-menu'); m.classList.toggle('translate-x-full'); m.classList.toggle('translate-x-0'); };
-        window.onclick = (e) => { if (!e.target.closest('button')) document.getElementById('browse-menu').classList.add('hidden'); };
-        window.scrollRow = (id, direction) => { const row = document.getElementById(id); const amount = 500; if(direction === 'left') row.scrollLeft -= amount; else row.scrollLeft += amount; };
-        window.showHome = () => { currentMode = 'home'; document.getElementById('browse-menu').classList.add('hidden'); document.getElementById('series-view').classList.add('hidden'); document.getElementById('search-view').classList.add('hidden'); document.getElementById('home-view').classList.remove('hidden'); document.getElementById('skeleton-view').classList.add('hidden'); window.scrollTo(0,0); };
-        
+        // RETRY LOGIC FOR API KEYS
+        async function attemptLoad(theme) {
+            let success = await loadHome(theme);
+            if(!success) {
+                // If first key fails, swap key and try again
+                keyIndex = (keyIndex + 1) % KEYS.length;
+                console.log("Switching API Key to: " + KEYS[keyIndex]);
+                success = await loadHome('Avengers'); // Fallback theme
+                if(!success) {
+                    alert("API Error: Unable to load movies. Please check your internet connection.");
+                }
+            }
+            document.getElementById('skeleton-view').classList.add('hidden');
+            document.getElementById('home-view').classList.remove('hidden');
+        }
+
         async function loadHome(heroTerm) {
             try {
-                const res = await fetch(`https://www.omdbapi.com/?s=${encodeURIComponent(heroTerm)}&apikey=${API_KEY}`);
+                const res = await fetch(`https://www.omdbapi.com/?s=${encodeURIComponent(heroTerm)}&apikey=${KEYS[keyIndex]}`);
                 const data = await res.json();
                 if(data.Search && data.Search.length > 0) {
                     const items = data.Search.filter(m => m.Poster && m.Poster !== "N/A");
                     if(items.length > 0) { 
                         setupHero(items[0]);
                         const container = document.getElementById('home-content');
-                        // Preserve history
                         const hRow = document.getElementById('history-row-container');
                         container.innerHTML = ''; 
                         if(hRow) container.appendChild(hRow);
-
                         createRowSection(`TOP ${heroTerm.toUpperCase()} TODAY`, items.slice(0, 9), container, true);
                         for(let category of HOME_ROWS) { fetchAndCreateRow(category.title, category.query, container); }
                         return true; 
@@ -305,9 +290,8 @@
         }
 
         async function fetchAndCreateRow(title, query, container) {
-            const randomPage = Math.floor(Math.random() * 5) + 1;
             try {
-                const res = await fetch(`https://www.omdbapi.com/?s=${query}&type=movie&page=${randomPage}&apikey=${API_KEY}`);
+                const res = await fetch(`https://www.omdbapi.com/?s=${query}&type=movie&page=${Math.floor(Math.random()*3)+1}&apikey=${KEYS[keyIndex]}`);
                 const data = await res.json();
                 if(data.Search) {
                     const items = data.Search.filter(m => m.Poster && m.Poster !== "N/A");
@@ -324,12 +308,12 @@
 
         function createCardHTML(m, i, isRanked) {
             const poster = m.Poster !== "N/A" ? m.Poster : PLACEHOLDER_IMG;
-            // SAFE ENCODING: We encode the strings so quotes don't break HTML
-            const safeTitle = encodeURIComponent(m.Title);
-            const safePoster = encodeURIComponent(poster);
-            
-            const hoverEvent = `onmouseenter="window.showHoverCard(this, '${m.imdbID}', '${m.Type}', '${safeTitle}', '${m.Year || ''}', '${safePoster}')" onmouseleave="window.hideHoverCard()"`;
-            const clickAttr = `onclick="window.play('${m.imdbID}', '${safeTitle}', '${safePoster}', '${m.Type}')"`;
+            // SAFE DATA
+            const safeTitle = m.Title.replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+            const jsTitle = m.Title.replace(/'/g, "\\'"); 
+
+            const hoverEvent = `onmouseenter="window.showHoverCard(this, '${m.imdbID}', '${m.Type}', '${safeTitle}', '${m.Year || ''}', '${poster}')" onmouseleave="window.hideHoverCard()"`;
+            const clickAttr = `onclick="window.play('${m.imdbID}', '${jsTitle}', '${poster}', '${m.Type}')"`;
 
             let inner;
             if(isRanked) {
@@ -351,11 +335,8 @@
             document.getElementById('hero-title').innerText = item.Title.toUpperCase();
             document.getElementById('hero-badge-type').innerText = item.Type.toUpperCase();
             
-            // Safe Encoding for Hero Button too
-            const safeTitle = encodeURIComponent(item.Title);
-            const safePoster = encodeURIComponent(hdUrl);
-            document.getElementById('hero-play-btn').onclick = () => window.play(item.imdbID, safeTitle, safePoster, item.Type);
-            
+            const jsTitle = item.Title.replace(/'/g, "\\'");
+            document.getElementById('hero-play-btn').onclick = () => window.play(item.imdbID, jsTitle, hdUrl, item.Type);
             document.getElementById('hero-section').classList.remove('hidden'); document.getElementById('hero-section').classList.add('flex');
         }
 
@@ -369,7 +350,7 @@
                 if (discoveryIndex >= keywords.length) discoveryIndex = 0;
                 const term = keywords[discoveryIndex]; discoveryIndex++;
                 try {
-                    const res = await fetch(`https://www.omdbapi.com/?s=${term}&type=${discoveryType === 'anime' ? 'series' : discoveryType}&apikey=${API_KEY}`);
+                    const res = await fetch(`https://www.omdbapi.com/?s=${term}&type=${discoveryType === 'anime' ? 'series' : discoveryType}&apikey=${KEYS[keyIndex]}`);
                     const data = await res.json();
                     if(data.Search) document.getElementById('search-grid').insertAdjacentHTML('beforeend', data.Search.map(m => createCardHTML(m, 0, false)).join(''));
                 } catch(e) {}
@@ -378,66 +359,61 @@
         }
 
         document.getElementById('full-search-form').addEventListener('submit', async (e) => { e.preventDefault(); currentSearchQuery = document.getElementById('full-search-input').value; searchPage = 1; document.getElementById('search-grid').innerHTML = ''; loadMoreSearch(); });
-        async function loadMoreSearch() { if(!currentSearchQuery) return; isLoading = true; document.getElementById('scroll-loader').classList.remove('hidden'); try { const res = await fetch(`https://www.omdbapi.com/?s=${encodeURIComponent(currentSearchQuery)}&page=${searchPage}&apikey=${API_KEY}`); const data = await res.json(); if(data.Search) { document.getElementById('search-grid').insertAdjacentHTML('beforeend', data.Search.map(m => createCardHTML(m, 0, false)).join('')); searchPage++; } else { isLoading = true; document.getElementById('scroll-loader').classList.add('hidden'); return; } } catch(e){} isLoading = false; document.getElementById('scroll-loader').classList.add('hidden'); }
+        async function loadMoreSearch() { if(!currentSearchQuery) return; isLoading = true; document.getElementById('scroll-loader').classList.remove('hidden'); try { const res = await fetch(`https://www.omdbapi.com/?s=${encodeURIComponent(currentSearchQuery)}&page=${searchPage}&apikey=${KEYS[keyIndex]}`); const data = await res.json(); if(data.Search) { document.getElementById('search-grid').insertAdjacentHTML('beforeend', data.Search.map(m => createCardHTML(m, 0, false)).join('')); searchPage++; } else { isLoading = true; document.getElementById('scroll-loader').classList.add('hidden'); return; } } catch(e){} isLoading = false; document.getElementById('scroll-loader').classList.add('hidden'); }
         
         function getImage(url, isHero = false) { if (!url || url === "N/A") return PLACEHOLDER_IMG; if (isHero && url.includes("._V1")) return url.split("._V1")[0] + "._V1.jpg"; return url; }
 
         window.routeClick = (id, type) => { window.play(id, 'Loading...', '', type); };
         
-        // --- CENTRAL PLAY FUNCTION (DECODING ADDED) ---
-        window.play = (id, encodedTitle, encodedPoster, type) => {
-            // 1. Decode the safe strings back to normal text
-            const title = decodeURIComponent(encodedTitle);
-            const poster = decodeURIComponent(encodedPoster);
-
-            // 2. Save to History
+        window.play = (id, title, poster, type) => {
             addToHistory(id, title, poster, type);
-
-            // 3. Route to player or series page
-            if (type === 'series' || type === 'tv') {
-                openSeriesPage(id);
-            } else {
-                window.openPlayerRaw(`https://vidsrc.to/embed/movie/${id}`);
-            }
+            if(type === 'series' || type === 'tv') openSeriesPage(id);
+            else window.openPlayerRaw(`https://vidsrc.to/embed/movie/${id}`);
         };
 
         async function openSeriesPage(id) {
             currentSeriesID = id; document.getElementById('home-view').classList.add('hidden'); document.getElementById('search-view').classList.add('hidden'); document.getElementById('series-view').classList.remove('hidden'); window.scrollTo(0,0);
             
             try {
-                const res = await fetch(`https://www.omdbapi.com/?i=${id}&apikey=${API_KEY}`); 
+                const res = await fetch(`https://www.omdbapi.com/?i=${id}&apikey=${KEYS[keyIndex]}`); 
                 const data = await res.json();
                 
-                // ERROR CHECK: If API fails, handle gracefully
-                if(data.Response === "False") {
-                    alert("Error loading series info: " + data.Error);
+                // ERROR CHECK
+                if(!data || data.Response === "False") {
+                    alert("Error loading series info.");
                     return;
                 }
 
                 currentSeriesPosterUrl = getImage(data.Poster, true);
                 const bgElement = document.getElementById('series-bg'); const img = new Image(); img.src = currentSeriesPosterUrl;
                 img.onload = () => { bgElement.style.backgroundImage = `url('${currentSeriesPosterUrl}')`; }; img.onerror = () => { bgElement.style.backgroundImage = `url('${PLACEHOLDER_IMG}')`; };
-                document.getElementById('series-poster').src = data.Poster !== "N/A" ? data.Poster : PLACEHOLDER_IMG; document.getElementById('series-title').innerText = data.Title; document.getElementById('series-year').innerText = data.Year; 
+                document.getElementById('series-poster').src = data.Poster !== "N/A" ? data.Poster : PLACEHOLDER_IMG; 
+                document.getElementById('series-title').innerText = data.Title || "Unknown Title"; 
+                document.getElementById('series-year').innerText = data.Year || "N/A"; 
                 
-                const seasons = parseInt(data.totalSeasons);
-                document.getElementById('series-seasons').innerText = (seasons || 1) + " Seasons";
+                const seasons = parseInt(data.totalSeasons) || 1;
+                document.getElementById('series-seasons').innerText = seasons + " Seasons";
                 
                 const select = document.getElementById('season-select'); select.innerHTML = ''; 
-                for(let i=1; i<=(seasons || 1); i++) { select.innerHTML += `<option value="${i}">Season ${i}</option>`; } 
+                for(let i=1; i<=seasons; i++) { select.innerHTML += `<option value="${i}">Season ${i}</option>`; } 
                 window.changeSeason(1);
             } catch(e) { console.log(e); }
         }
 
         window.changeSeason = async (seasonNum) => {
             const list = document.getElementById('episode-list'); list.innerHTML = '<div class="text-center py-8 text-gray-500">Loading episodes...</div>';
-            try { const res = await fetch(`https://www.omdbapi.com/?i=${currentSeriesID}&Season=${seasonNum}&apikey=${API_KEY}`); const data = await res.json(); 
+            try { const res = await fetch(`https://www.omdbapi.com/?i=${currentSeriesID}&Season=${seasonNum}&apikey=${KEYS[keyIndex]}`); const data = await res.json(); 
             if(data.Episodes) { list.innerHTML = data.Episodes.map(ep => `<div class="episode-card flex gap-4 p-4 rounded-xl cursor-pointer group items-center" onclick="window.openPlayerRaw('https://vidsrc.to/embed/tv/${currentSeriesID}/${seasonNum}/${ep.Episode}')"><div class="text-2xl font-bold text-gray-600 w-8 text-center group-hover:text-red-600">${ep.Episode}</div><div class="w-32 h-20 bg-black rounded overflow-hidden shrink-0 relative border border-gray-700"><img src="${currentSeriesPosterUrl}" class="w-full h-full object-cover opacity-50 group-hover:opacity-100 transition" onerror="this.src='${PLACEHOLDER_IMG}'"><div class="absolute inset-0 flex items-center justify-center"><div class="bg-white/10 p-1.5 rounded-full backdrop-blur-sm border border-white/20 group-hover:bg-red-600 group-hover:border-red-600 transition">▶</div></div></div><div class="flex-1"><h3 class="font-bold text-base text-gray-200 group-hover:text-white">${ep.Title}</h3><p class="text-xs text-gray-500 mt-1">${ep.Released}</p></div></div>`).join(''); } 
             else { list.innerHTML = '<div class="text-center py-8 text-red-500">No episodes found.</div>'; } } catch(e) { list.innerHTML = '<div class="text-center py-8 text-red-500">Error.</div>'; }
         };
         window.openPlayerRaw = (url) => { document.getElementById('player-modal').classList.remove('hidden'); document.getElementById('video-frame').src = url; };
         window.closePlayer = () => { document.getElementById('player-modal').classList.add('hidden'); document.getElementById('video-frame').src = ''; };
 
-        window.addEventListener('scroll', () => { if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500) { if (!isLoading && (currentMode === 'discovery' || currentMode === 'search')) { if (currentMode === 'discovery') loadMoreDiscovery(); else loadMoreSearch(); } } });
+        window.toggleMenu = () => { document.getElementById('browse-menu').classList.toggle('hidden'); document.getElementById('browse-menu').classList.add('menu-fade-enter-active'); };
+        window.toggleMobileMenu = () => { const m = document.getElementById('mobile-menu'); m.classList.toggle('translate-x-full'); m.classList.toggle('translate-x-0'); };
+        window.onclick = (e) => { if (!e.target.closest('button')) document.getElementById('browse-menu').classList.add('hidden'); };
+        window.scrollRow = (id, direction) => { const row = document.getElementById(id); const amount = 500; if(direction === 'left') row.scrollLeft -= amount; else row.scrollLeft += amount; };
+        
         window.initRandomHome();
     </script>
 </body>
