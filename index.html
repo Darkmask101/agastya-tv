@@ -27,9 +27,14 @@
         /* CARDS */
         .episode-card { background-color: #181818; border: 1px solid #333; transition: all 0.2s ease; }
         .episode-card:hover { background-color: #222; border-color: #555; transform: scale(1.01); }
+        
         .movie-card { transition: transform 0.3s ease; z-index: 10; position: relative; cursor: pointer; }
         .movie-card:hover { transform: scale(1.05); z-index: 20; }
-        .rank-number { font-size: 180px; font-weight: 900; line-height: 1; -webkit-text-stroke: 4px #333; color: transparent; position: absolute; left: -20px; bottom: -20px; z-index: 0; font-family: impact, sans-serif; opacity: 0.5; }
+        /* Aspect Ratio class for consistent poster sizes */
+        .aspect-poster { aspect-ratio: 2 / 3; }
+
+        .rank-number { font-size: 120px; font-weight: 900; line-height: 1; -webkit-text-stroke: 4px #333; color: transparent; position: absolute; left: -10px; bottom: -10px; z-index: 0; font-family: impact, sans-serif; opacity: 0.5; }
+        @media (min-width: 768px) { .rank-number { font-size: 180px; left: -20px; bottom: -20px; } }
         
         /* MENUS & UI */
         .menu-fade-enter-active { opacity: 1; transform: translateY(0); transition: all 0.2s ease; }
@@ -39,13 +44,14 @@
         .auth-input:focus { border-color: #dc2626; }
         
         /* SLIDERS */
-        .slider-arrow { position: absolute; top: 0; bottom: 0; width: 50px; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 40; cursor: pointer; opacity: 0; transition: opacity 0.3s ease; }
+        .slider-arrow { position: absolute; top: 0; bottom: 0; width: 40px; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 40; cursor: pointer; opacity: 0; transition: opacity 0.3s ease; }
         .group:hover .slider-arrow { opacity: 1; }
         .right-arrow { right: 0; background: linear-gradient(to left, #000, transparent); }
         .left-arrow { left: 0; background: linear-gradient(to right, #000, transparent); }
 
         /* HOVER MODAL */
-        #hover-modal { position: fixed; z-index: 100; background-color: #141414; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.7); width: 320px; overflow: hidden; opacity: 0; pointer-events: none; transform: scale(0.9); transition: opacity 0.2s ease, transform 0.2s ease; }
+        #hover-modal { position: fixed; z-index: 100; background-color: #141414; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.7); width: 280px; overflow: hidden; opacity: 0; pointer-events: none; transform: scale(0.9); transition: opacity 0.2s ease, transform 0.2s ease; }
+        @media (min-width: 768px) { #hover-modal { width: 320px; } }
         #hover-modal.active { opacity: 1; pointer-events: auto; transform: scale(1.1); }
     </style>
 </head>
@@ -67,8 +73,7 @@
                         <div class="text-xs font-bold text-gray-500 mb-2 uppercase tracking-widest">Content</div>
                         <div class="grid grid-cols-1 gap-1">
                             <button onclick="window.startDiscovery('movie')" class="flex items-center gap-3 p-3 rounded-lg hover:bg-white/10 transition text-left"><span class="bg-red-600/20 text-red-500 p-2 rounded-md">🎬</span><div class="text-sm font-bold text-gray-200">Movies</div></button>
-                            <button onclick="window.startDiscovery('series')" class="flex items-center gap-3 p-3 rounded-lg hover:bg-white/10 transition text-left"><span class="bg-blue-600/20 text-blue-500 p-2 rounded-md">📺</span><div class="text-sm font-bold text-gray-200">TV Shows</div></button>
-                            <button onclick="window.startDiscovery('anime')" class="flex items-center gap-3 p-3 rounded-lg hover:bg-white/10 transition text-left"><span class="bg-purple-600/20 text-purple-500 p-2 rounded-md">🎌</span><div class="text-sm font-bold text-gray-200">Anime</div></button>
+                            <button onclick="window.startDiscovery('tv')" class="flex items-center gap-3 p-3 rounded-lg hover:bg-white/10 transition text-left"><span class="bg-blue-600/20 text-blue-500 p-2 rounded-md">📺</span><div class="text-sm font-bold text-gray-200">TV Shows</div></button>
                         </div>
                     </div>
                 </div>
@@ -85,8 +90,7 @@
         <button onclick="window.toggleMobileMenu()" class="absolute top-6 right-6 text-gray-400 hover:text-white"><svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
         <button onclick="window.initRandomHome(); window.toggleMobileMenu()" class="text-3xl font-black text-white hover:text-red-600 transition">HOME</button>
         <button onclick="window.startDiscovery('movie'); window.toggleMobileMenu()" class="text-3xl font-black text-white hover:text-red-600 transition">MOVIES</button>
-        <button onclick="window.startDiscovery('series'); window.toggleMobileMenu()" class="text-3xl font-black text-white hover:text-blue-500 transition">SERIES</button>
-        <button onclick="window.startDiscovery('anime'); window.toggleMobileMenu()" class="text-3xl font-black text-white hover:text-purple-500 transition">ANIME</button>
+        <button onclick="window.startDiscovery('tv'); window.toggleMobileMenu()" class="text-3xl font-black text-white hover:text-blue-500 transition">SERIES</button>
         <button onclick="window.toggleMobileMenu(); window.openAuthModal()" id="mobile-auth-btn" class="text-xl font-bold text-gray-400 border border-gray-600 px-6 py-2 rounded-full">Sign In</button>
     </div>
 
@@ -116,7 +120,7 @@
         <div class="p-4 pt-2">
             <div class="flex gap-3 mb-3"><button onclick="window.playHovered()" class="w-8 h-8 bg-white text-black rounded-full flex items-center justify-center hover:bg-gray-200 transition"><svg class="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/></svg></button><button class="w-8 h-8 border-2 border-gray-500 rounded-full flex items-center justify-center hover:border-white text-gray-300 hover:text-white transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg></button><button class="w-8 h-8 border-2 border-gray-500 rounded-full flex items-center justify-center ml-auto hover:border-white text-gray-300 hover:text-white transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></button></div>
             <div class="flex items-center gap-2 mb-2 text-xs font-semibold"><span class="text-green-400">97% Match</span><span class="border border-gray-500 px-1 rounded text-[10px] text-gray-400">HD</span><span id="hover-year" class="text-gray-400">2023</span></div>
-            <div class="flex flex-wrap gap-2 text-[10px] text-gray-300"><span id="hover-type" class="capitalize">Action</span><span>•</span><span>Exciting</span></div>
+            <div class="flex flex-wrap gap-2 text-[10px] text-gray-300"><span id="hover-type" class="capitalize">Action</span></div>
         </div>
     </div>
 
@@ -131,7 +135,7 @@
                 <div class="max-w-2xl text-left">
                     <div class="flex items-center gap-3 mb-4"><span class="bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded tracking-widest uppercase">#1 Trending</span><span id="hero-badge-type" class="bg-white/10 text-white text-[10px] font-bold px-2 py-1 rounded border border-white/20">MOVIE</span></div>
                     <h1 id="hero-title" class="text-4xl md:text-5xl font-black mb-6 leading-tight drop-shadow-2xl">LOADING...</h1>
-                    <p class="text-gray-300 text-base md:text-lg mb-8 line-clamp-3 font-medium w-full md:w-3/4">Stream the latest hits in high definition on Agastya TV. No ads, no sign-ups.</p>
+                    <p id="hero-desc" class="text-gray-300 text-base md:text-lg mb-8 line-clamp-3 font-medium w-full md:w-3/4">Stream the latest hits in high definition on Agastya TV. No ads, no sign-ups.</p>
                     <button id="hero-play-btn" class="bg-white text-black px-8 py-3 rounded-lg font-bold flex items-center gap-3 hover:bg-gray-200 transition shadow-xl">▶ Play Now</button>
                 </div>
                 <div class="hidden md:block w-72 h-[450px] rounded-lg overflow-hidden shadow-2xl border border-white/10 bg-gray-800 shrink-0 transform rotate-1 hover:rotate-0 transition duration-500"><img id="hero-poster" class="w-full h-full object-cover"></div>
@@ -140,7 +144,8 @@
         <main id="home-content" class="relative z-20 -mt-10 px-6 pb-20 space-y-16"></main>
     </div>
 
-    <div id="search-view" class="hidden min-h-screen pt-32 px-6 pb-20 max-w-7xl mx-auto"><div class="text-center mb-16"><h1 id="browse-title" class="text-4xl font-bold mb-6">Find Your Next Favorite</h1><form id="full-search-form" class="max-w-3xl mx-auto"><div class="bg-[#121212] border border-[#333] rounded-xl flex items-center h-16"><input type="text" id="full-search-input" class="w-full bg-transparent text-white text-xl px-6 focus:outline-none placeholder-gray-600 h-full" placeholder="Search..."><button type="submit" class="bg-red-600 h-full px-8 font-bold hover:bg-red-700 transition uppercase">Search</button></div></form></div><div id="search-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6"></div><div id="scroll-loader" class="hidden text-center py-10"><div class="loader"></div><p class="text-gray-500 text-sm">Loading more content...</p></div></div>
+    <div id="search-view" class="hidden min-h-screen pt-32 px-6 pb-20 max-w-7xl mx-auto"><div class="text-center mb-16"><h1 id="browse-title" class="text-4xl font-bold mb-6">Find Your Next Favorite</h1><form id="full-search-form" class="max-w-3xl mx-auto"><div class="bg-[#121212] border border-[#333] rounded-xl flex items-center h-16 px-2"><input type="text" id="full-search-input" class="w-full bg-transparent text-white text-lg md:text-xl px-4 focus:outline-none placeholder-gray-600 h-full" placeholder="Search..."><button type="submit" class="bg-red-600 h-12 px-6 rounded-lg font-bold hover:bg-red-700 transition uppercase text-sm md:text-base">Search</button></div></form></div>
+    <div id="search-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-6"></div><div id="scroll-loader" class="hidden text-center py-10"><div class="loader"></div><p class="text-gray-500 text-sm">Loading more content...</p></div></div>
     
     <div id="series-view" class="hidden min-h-screen bg-[#0a0a0a] pb-20"><div class="relative w-full h-[50vh] flex items-end pb-8 overflow-hidden"><div id="series-bg" class="hero-blur-bg opacity-40"></div><div class="hero-gradient"></div><div class="relative z-10 w-full max-w-6xl mx-auto px-6 flex flex-col md:flex-row gap-8 items-end"><img id="series-poster" class="w-40 h-60 object-cover rounded shadow-2xl border border-white/20 hidden md:block bg-gray-800"><div class="mb-2"><h1 id="series-title" class="text-4xl md:text-6xl font-black mb-2 leading-none">TITLE</h1><div class="flex gap-4 text-sm font-bold text-gray-400 mb-6 items-center"><span id="series-year">2023</span><span class="bg-white/10 px-2 py-0.5 rounded text-white border border-white/10">TV-MA</span><span id="series-seasons" class="text-green-500">1 Seasons</span></div></div></div></div><div class="max-w-6xl mx-auto px-6 mt-8"><div class="flex justify-between items-center mb-6 border-b border-gray-800 pb-4"><h2 class="text-2xl font-bold">Episodes</h2><div class="relative"><select id="season-select" onchange="window.changeSeason(this.value)" class="appearance-none bg-[#1a1a1a] border border-gray-700 text-white pl-4 pr-10 py-2 rounded hover:border-gray-500 focus:outline-none cursor-pointer"></select></div></div><div id="episode-list" class="flex flex-col gap-3"></div></div></div>
     <div id="player-modal" class="fixed inset-0 z-[100] hidden bg-black flex flex-col items-center justify-center"><button onclick="window.closePlayer()" class="absolute top-6 right-8 z-50 bg-black/50 text-white w-12 h-12 rounded-full flex items-center justify-center hover:bg-red-600 transition border border-white/20">✕</button><div class="w-full h-full relative"><iframe id="video-frame" class="w-full h-full" src="" frameborder="0" allowfullscreen allow="autoplay; encrypted-media"></iframe></div></div>
@@ -164,18 +169,32 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // KEYS & FALLBACKS
-        const KEYS = ['e2307776', 'b6b0922e']; // Rotates keys if one fails
-        let keyIndex = 0;
+        // TMDB CONFIG
+        const API_KEY = 'a2971dc1f1c0eba47eddeb62eacd078e';
+        const BASE_URL = 'https://api.themoviedb.org/3';
+        const IMG_BASE = 'https://image.tmdb.org/t/p/w500';
+        const IMG_ORIGINAL = 'https://image.tmdb.org/t/p/original';
+        
         const PLACEHOLDER_IMG = "https://via.placeholder.com/300x450/000000/FFFFFF?text=AGASTYA+TV";
-        let currentMode = 'home'; let discoveryType = 'movie'; let discoveryIndex = 0; let searchPage = 1; let currentSearchQuery = ''; let isLoading = false; let currentSeriesID = ''; let currentSeriesPosterUrl = ''; let hoverTimeout; let hoveredMovieId = '';
+        
+        let currentMode = 'home'; 
+        let discoveryType = 'movie'; 
+        let discoveryPage = 1; 
+        let searchPage = 1; 
+        let currentSearchQuery = ''; 
+        let isLoading = false; 
+        let currentSeriesID = ''; 
+        let currentSeriesPosterUrl = ''; 
+        let hoverTimeout; 
+        let hoveredMovieId = '';
         
         const HOME_THEMES = ['Avengers', 'Batman', 'Spider-Man', 'Harry Potter', 'Star Wars', 'John Wick'];
-        const DISCOVERY_KEYWORDS = ['Action', 'Comedy', 'Horror', 'Sci-Fi', 'Thriller'];
         const HOME_ROWS = [
-            { title: "Love is in the Air", query: "Romance" },
-            { title: "Films to Cheer You Up", query: "Comedy" },
-            { title: "High Octane Action", query: "Action" }
+            { title: "Love is in the Air", genreId: 10749 },
+            { title: "Films to Cheer You Up", genreId: 35 },
+            { title: "High Octane Action", genreId: 28 },
+            { title: "Spine Chilling Horror", genreId: 27 },
+            { title: "Mind Bending Sci-Fi", genreId: 878 }
         ];
 
         // --- AUTH ---
@@ -213,7 +232,7 @@
                 const docSnap = await getDoc(userRef);
                 let currentHistory = [];
                 if (docSnap.exists() && docSnap.data().watchHistory) { currentHistory = docSnap.data().watchHistory; }
-                const newHistory = currentHistory.filter(item => item.id !== id);
+                const newHistory = currentHistory.filter(item => item.id != id); 
                 newHistory.push({ id, title, poster, type, timestamp: Date.now() });
                 await setDoc(userRef, { watchHistory: newHistory }, { merge: true });
                 loadUserHistory(user.uid);
@@ -232,7 +251,14 @@
                     histContainer.id = 'history-row-container';
                     mainContent.prepend(histContainer);
                 }
-                const items = historyData.map(item => ({ imdbID: item.id, Title: item.title, Poster: item.poster, Type: item.type, Year: "" }));
+                const items = historyData.map(item => ({ 
+                    id: item.id, 
+                    title: item.title, 
+                    poster_path: item.poster.replace(IMG_BASE, ''), 
+                    media_type: item.type,
+                    isHistory: true,
+                    fullPoster: item.poster 
+                }));
                 if(items.length > 0) {
                     histContainer.innerHTML = '';
                     createRowSection("Continue Watching", items, histContainer, false);
@@ -245,56 +271,38 @@
             const hasSeenSplash = sessionStorage.getItem('agastya_splash_shown');
             if (!hasSeenSplash) { document.getElementById('splash-screen').classList.remove('hidden'); setTimeout(() => { document.getElementById('splash-screen').classList.add('fade-out'); setTimeout(() => document.getElementById('splash-screen').style.display = 'none', 500); }, 2000); sessionStorage.setItem('agastya_splash_shown', 'true'); } else { document.getElementById('home-view').classList.add('hidden'); document.getElementById('series-view').classList.add('hidden'); document.getElementById('search-view').classList.add('hidden'); document.getElementById('skeleton-view').classList.remove('hidden'); }
             
-            setTimeout(() => { document.getElementById('skeleton-view').classList.add('hidden'); document.getElementById('home-view').classList.remove('hidden'); }, 3000);
+            setTimeout(() => { document.getElementById('skeleton-view').classList.add('hidden'); document.getElementById('home-view').classList.remove('hidden'); }, 1500);
 
-            // TRY LOADING
             const randomTheme = HOME_THEMES[Math.floor(Math.random() * HOME_THEMES.length)];
-            attemptLoad(randomTheme);
+            loadHome(randomTheme);
         };
-
-        // RETRY LOGIC FOR API KEYS
-        async function attemptLoad(theme) {
-            let success = await loadHome(theme);
-            if(!success) {
-                // If first key fails, swap key and try again
-                keyIndex = (keyIndex + 1) % KEYS.length;
-                console.log("Switching API Key to: " + KEYS[keyIndex]);
-                success = await loadHome('Avengers'); // Fallback theme
-                if(!success) {
-                    alert("API Error: Unable to load movies. Please check your internet connection.");
-                }
-            }
-            document.getElementById('skeleton-view').classList.add('hidden');
-            document.getElementById('home-view').classList.remove('hidden');
-        }
 
         async function loadHome(heroTerm) {
             try {
-                const res = await fetch(`https://www.omdbapi.com/?s=${encodeURIComponent(heroTerm)}&apikey=${KEYS[keyIndex]}`);
+                const res = await fetch(`${BASE_URL}/search/movie?api_key=${API_KEY}&query=${encodeURIComponent(heroTerm)}`);
                 const data = await res.json();
-                if(data.Search && data.Search.length > 0) {
-                    const items = data.Search.filter(m => m.Poster && m.Poster !== "N/A");
+                if(data.results && data.results.length > 0) {
+                    const items = data.results.filter(m => m.poster_path);
                     if(items.length > 0) { 
                         setupHero(items[0]);
                         const container = document.getElementById('home-content');
                         const hRow = document.getElementById('history-row-container');
                         container.innerHTML = ''; 
                         if(hRow) container.appendChild(hRow);
+                        
                         createRowSection(`TOP ${heroTerm.toUpperCase()} TODAY`, items.slice(0, 9), container, true);
-                        for(let category of HOME_ROWS) { fetchAndCreateRow(category.title, category.query, container); }
-                        return true; 
+                        for(let category of HOME_ROWS) { fetchAndCreateRow(category.title, category.genreId, container); }
                     }
                 }
-                return false;
-            } catch(e) { return false; }
+            } catch(e) { console.log("Error loading home:", e); }
         }
 
-        async function fetchAndCreateRow(title, query, container) {
+        async function fetchAndCreateRow(title, genreId, container) {
             try {
-                const res = await fetch(`https://www.omdbapi.com/?s=${query}&type=movie&page=${Math.floor(Math.random()*3)+1}&apikey=${KEYS[keyIndex]}`);
+                const res = await fetch(`${BASE_URL}/discover/movie?api_key=${API_KEY}&with_genres=${genreId}&page=${Math.floor(Math.random()*3)+1}`);
                 const data = await res.json();
-                if(data.Search) {
-                    const items = data.Search.filter(m => m.Poster && m.Poster !== "N/A");
+                if(data.results) {
+                    const items = data.results.filter(m => m.poster_path);
                     createRowSection(title, items, container, false);
                 }
             } catch(e) {}
@@ -302,68 +310,135 @@
 
         function createRowSection(title, items, container, isRanked) {
             const rowId = 'row-' + title.replace(/\s+/g, '-').toLowerCase() + Math.floor(Math.random() * 1000);
-            const html = `<div><h2 class="text-xl font-bold mb-6 text-white flex items-center gap-3 pl-2">${isRanked ? '<div class="w-1 h-6 bg-red-600 rounded-full"></div>' : ''} ${title}</h2><div class="relative group"><button class="slider-arrow left-arrow" onclick="window.scrollRow('${rowId}', 'left')"><svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button><div id="${rowId}" class="flex ${isRanked ? 'gap-16' : 'gap-5'} overflow-x-auto hide-scroll pb-10 pl-${isRanked ? '8' : '2'} scroll-smooth">${items.map((m, i) => createCardHTML(m, i, isRanked)).join('')}</div><button class="slider-arrow right-arrow" onclick="window.scrollRow('${rowId}', 'right')"><svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></button></div></div>`;
+            const html = `<div><h2 class="text-xl font-bold mb-6 text-white flex items-center gap-3 pl-2">${isRanked ? '<div class="w-1 h-6 bg-red-600 rounded-full"></div>' : ''} ${title}</h2><div class="relative group"><button class="slider-arrow left-arrow" onclick="window.scrollRow('${rowId}', 'left')"><svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button><div id="${rowId}" class="flex ${isRanked ? 'gap-16' : 'gap-5'} overflow-x-auto hide-scroll pb-10 pl-${isRanked ? '8' : '2'} scroll-smooth">${items.map((m, i) => createCardHTML(m, i, isRanked, false)).join('')}</div><button class="slider-arrow right-arrow" onclick="window.scrollRow('${rowId}', 'right')"><svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></button></div></div>`;
             container.insertAdjacentHTML('beforeend', html);
         }
 
-        function createCardHTML(m, i, isRanked) {
-            const poster = m.Poster !== "N/A" ? m.Poster : PLACEHOLDER_IMG;
-            // SAFE DATA
-            const safeTitle = m.Title.replace(/'/g, "&apos;").replace(/"/g, "&quot;");
-            const jsTitle = m.Title.replace(/'/g, "\\'"); 
+        // --- UPDATED CARD GENERATOR FOR RESPONSIVENESS ---
+        function createCardHTML(m, i, isRanked, isGrid = false) {
+            const poster = m.isHistory ? m.fullPoster : (m.poster_path ? IMG_BASE + m.poster_path : PLACEHOLDER_IMG);
+            const title = m.title || m.name || "Unknown";
+            const date = m.release_date || m.first_air_date || '';
+            const year = date.split('-')[0];
+            const type = m.media_type || (m.title ? 'movie' : 'tv');
+            
+            const safeTitle = title.replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+            const jsTitle = title.replace(/'/g, "\\'"); 
 
-            const hoverEvent = `onmouseenter="window.showHoverCard(this, '${m.imdbID}', '${m.Type}', '${safeTitle}', '${m.Year || ''}', '${poster}')" onmouseleave="window.hideHoverCard()"`;
-            const clickAttr = `onclick="window.play('${m.imdbID}', '${jsTitle}', '${poster}', '${m.Type}')"`;
+            const hoverEvent = `onmouseenter="window.showHoverCard(this, '${m.id}', '${type}', '${safeTitle}', '${year}', '${poster}')" onmouseleave="window.hideHoverCard()"`;
+            const clickAttr = `onclick="window.play('${m.id}', '${jsTitle}', '${poster}', '${type}')"`;
 
-            let inner;
-            if(isRanked) {
-                inner = `<span class="rank-number">${i + 1}</span><img src="${poster}" class="w-full h-full object-cover rounded-lg relative z-10 shadow-xl ml-6 bg-gray-800 border border-white/5" onerror="this.parentElement.remove()">`;
-                return `<div class="relative min-w-[160px] h-[240px] movie-card group flex-shrink-0" ${hoverEvent} ${clickAttr}>${inner}</div>`;
+            let cardClass = "";
+            let inner = "";
+
+            if (isGrid) {
+                // FLUID WIDTH FOR GRID (Fixes the screenshot issue)
+                cardClass = `w-full aspect-poster relative rounded-xl overflow-hidden cursor-pointer movie-card border border-white/5`;
+                inner = `<img src="${poster}" class="w-full h-full object-cover bg-gray-800" onerror="this.src='${PLACEHOLDER_IMG}'"><div class="absolute top-2 right-2 bg-black/60 px-2 py-1 rounded text-[10px] font-bold uppercase border border-white/10 backdrop-blur-md">${type === 'tv' ? 'SERIES' : 'MOVIE'}</div>`;
+            } else if (isRanked) {
+                // FIXED WIDTH FOR RANKED SLIDER
+                cardClass = `relative min-w-[150px] md:min-w-[160px] h-[225px] md:h-[240px] movie-card group flex-shrink-0`;
+                inner = `<span class="rank-number">${i + 1}</span><img src="${poster}" class="w-full h-full object-cover rounded-lg relative z-10 shadow-xl ml-6 bg-gray-800 border border-white/5" onerror="this.src='${PLACEHOLDER_IMG}'">`;
             } else {
-                inner = `<img src="${poster}" class="w-full h-full object-cover bg-gray-800" onerror="this.parentElement.remove()"><div class="absolute top-2 right-2 bg-black/60 px-2 py-1 rounded text-[10px] font-bold uppercase border border-white/10 backdrop-blur-md">${m.Type}</div>`;
-                return `<div class="min-w-[200px] h-[300px] movie-card relative rounded-xl overflow-hidden cursor-pointer flex-shrink-0 border border-white/5" ${hoverEvent} ${clickAttr}>${inner}</div>`;
+                // FIXED WIDTH FOR STANDARD SLIDER
+                cardClass = `min-w-[140px] md:min-w-[200px] h-[210px] md:h-[300px] movie-card relative rounded-xl overflow-hidden cursor-pointer flex-shrink-0 border border-white/5`;
+                inner = `<img src="${poster}" class="w-full h-full object-cover bg-gray-800" onerror="this.src='${PLACEHOLDER_IMG}'"><div class="absolute top-2 right-2 bg-black/60 px-2 py-1 rounded text-[10px] font-bold uppercase border border-white/10 backdrop-blur-md">${type === 'tv' ? 'SERIES' : 'MOVIE'}</div>`;
             }
+
+            return `<div class="${cardClass}" ${hoverEvent} ${clickAttr}>${inner}</div>`;
         }
 
         function setupHero(item) {
-            const hdUrl = getImage(item.Poster, true);
-            const bg = document.getElementById('hero-bg'); const poster = document.getElementById('hero-poster');
-            const img = new Image(); img.src = hdUrl;
-            img.onload = () => { bg.style.backgroundImage = `url('${hdUrl}')`; poster.src = hdUrl; };
-            img.onerror = () => { bg.style.backgroundImage = `url('${item.Poster}')`; poster.src = item.Poster; };
-            poster.onerror = () => { poster.src = PLACEHOLDER_IMG; };
-            document.getElementById('hero-title').innerText = item.Title.toUpperCase();
-            document.getElementById('hero-badge-type').innerText = item.Type.toUpperCase();
+            const hdUrl = item.backdrop_path ? IMG_ORIGINAL + item.backdrop_path : (item.poster_path ? IMG_ORIGINAL + item.poster_path : PLACEHOLDER_IMG);
+            const posterUrl = item.poster_path ? IMG_BASE + item.poster_path : PLACEHOLDER_IMG;
             
-            const jsTitle = item.Title.replace(/'/g, "\\'");
-            document.getElementById('hero-play-btn').onclick = () => window.play(item.imdbID, jsTitle, hdUrl, item.Type);
+            const bg = document.getElementById('hero-bg'); 
+            const poster = document.getElementById('hero-poster');
+            
+            bg.style.backgroundImage = `url('${hdUrl}')`;
+            poster.src = posterUrl;
+            
+            document.getElementById('hero-title').innerText = (item.title || item.name).toUpperCase();
+            document.getElementById('hero-desc').innerText = item.overview || "No description available.";
+            
+            const jsTitle = (item.title || item.name).replace(/'/g, "\\'");
+            document.getElementById('hero-play-btn').onclick = () => window.play(item.id, jsTitle, posterUrl, 'movie');
             document.getElementById('hero-section').classList.remove('hidden'); document.getElementById('hero-section').classList.add('flex');
         }
 
-        window.startDiscovery = (type) => { currentMode = 'discovery'; discoveryType = type; discoveryIndex = 0; document.getElementById('browse-title').innerText = type === 'movie' ? "Popular Movies" : "Popular Content"; document.getElementById('search-grid').innerHTML = ''; document.getElementById('browse-menu').classList.add('hidden'); document.getElementById('home-view').classList.add('hidden'); document.getElementById('series-view').classList.add('hidden'); document.getElementById('search-view').classList.remove('hidden'); document.getElementById('skeleton-view').classList.add('hidden'); window.scrollTo(0,0); loadMoreDiscovery(); };
-        window.startSearchMode = () => { currentMode = 'search'; document.getElementById('browse-title').innerText = "Search"; document.getElementById('search-grid').innerHTML = ''; document.getElementById('home-view').classList.add('hidden'); document.getElementById('series-view').classList.add('hidden'); document.getElementById('search-view').classList.remove('hidden'); document.getElementById('skeleton-view').classList.add('hidden'); window.scrollTo(0,0); };
+        window.startDiscovery = (type) => { 
+            currentMode = 'discovery'; 
+            discoveryType = type; 
+            discoveryPage = 1; 
+            document.getElementById('browse-title').innerText = type === 'movie' ? "Popular Movies" : "Popular TV Shows"; 
+            document.getElementById('search-grid').innerHTML = ''; 
+            document.getElementById('browse-menu').classList.add('hidden'); 
+            document.getElementById('home-view').classList.add('hidden'); 
+            document.getElementById('series-view').classList.add('hidden'); 
+            document.getElementById('search-view').classList.remove('hidden'); 
+            document.getElementById('skeleton-view').classList.add('hidden'); 
+            window.scrollTo(0,0); 
+            loadMoreDiscovery(); 
+        };
+        
+        window.startSearchMode = () => { 
+            currentMode = 'search'; 
+            document.getElementById('browse-title').innerText = "Search"; 
+            document.getElementById('search-grid').innerHTML = ''; 
+            document.getElementById('home-view').classList.add('hidden'); 
+            document.getElementById('series-view').classList.add('hidden'); 
+            document.getElementById('search-view').classList.remove('hidden'); 
+            document.getElementById('skeleton-view').classList.add('hidden'); 
+            window.scrollTo(0,0); 
+        };
         
         async function loadMoreDiscovery() {
-            isLoading = true; document.getElementById('scroll-loader').classList.remove('hidden');
-            const keywords = discoveryType === 'anime' ? ANIME_KEYWORDS : DISCOVERY_KEYWORDS;
-            for (let i = 0; i < 2; i++) {
-                if (discoveryIndex >= keywords.length) discoveryIndex = 0;
-                const term = keywords[discoveryIndex]; discoveryIndex++;
-                try {
-                    const res = await fetch(`https://www.omdbapi.com/?s=${term}&type=${discoveryType === 'anime' ? 'series' : discoveryType}&apikey=${KEYS[keyIndex]}`);
-                    const data = await res.json();
-                    if(data.Search) document.getElementById('search-grid').insertAdjacentHTML('beforeend', data.Search.map(m => createCardHTML(m, 0, false)).join(''));
-                } catch(e) {}
-            }
-            isLoading = false; document.getElementById('scroll-loader').classList.add('hidden');
+            if(isLoading) return;
+            isLoading = true; 
+            document.getElementById('scroll-loader').classList.remove('hidden');
+            
+            try {
+                const endpoint = discoveryType === 'movie' ? 'movie/popular' : 'tv/popular';
+                const res = await fetch(`${BASE_URL}/${endpoint}?api_key=${API_KEY}&page=${discoveryPage}`);
+                const data = await res.json();
+                
+                if(data.results && data.results.length > 0) {
+                    // Pass TRUE for isGrid
+                    document.getElementById('search-grid').insertAdjacentHTML('beforeend', data.results.map(m => createCardHTML(m, 0, false, true)).join(''));
+                    discoveryPage++;
+                }
+            } catch(e) {}
+            isLoading = false; 
+            document.getElementById('scroll-loader').classList.add('hidden');
         }
 
-        document.getElementById('full-search-form').addEventListener('submit', async (e) => { e.preventDefault(); currentSearchQuery = document.getElementById('full-search-input').value; searchPage = 1; document.getElementById('search-grid').innerHTML = ''; loadMoreSearch(); });
-        async function loadMoreSearch() { if(!currentSearchQuery) return; isLoading = true; document.getElementById('scroll-loader').classList.remove('hidden'); try { const res = await fetch(`https://www.omdbapi.com/?s=${encodeURIComponent(currentSearchQuery)}&page=${searchPage}&apikey=${KEYS[keyIndex]}`); const data = await res.json(); if(data.Search) { document.getElementById('search-grid').insertAdjacentHTML('beforeend', data.Search.map(m => createCardHTML(m, 0, false)).join('')); searchPage++; } else { isLoading = true; document.getElementById('scroll-loader').classList.add('hidden'); return; } } catch(e){} isLoading = false; document.getElementById('scroll-loader').classList.add('hidden'); }
-        
-        function getImage(url, isHero = false) { if (!url || url === "N/A") return PLACEHOLDER_IMG; if (isHero && url.includes("._V1")) return url.split("._V1")[0] + "._V1.jpg"; return url; }
+        // Infinite Scroll
+        window.onscroll = () => {
+            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
+                if (currentMode === 'discovery') loadMoreDiscovery();
+                else if (currentMode === 'search') loadMoreSearch();
+            }
+        };
 
-        window.routeClick = (id, type) => { window.play(id, 'Loading...', '', type); };
+        document.getElementById('full-search-form').addEventListener('submit', async (e) => { e.preventDefault(); currentSearchQuery = document.getElementById('full-search-input').value; searchPage = 1; document.getElementById('search-grid').innerHTML = ''; loadMoreSearch(); });
+        
+        async function loadMoreSearch() { 
+            if(!currentSearchQuery || isLoading) return; 
+            isLoading = true; 
+            document.getElementById('scroll-loader').classList.remove('hidden'); 
+            try { 
+                const res = await fetch(`${BASE_URL}/search/multi?api_key=${API_KEY}&query=${encodeURIComponent(currentSearchQuery)}&page=${searchPage}`); 
+                const data = await res.json(); 
+                if(data.results && data.results.length > 0) { 
+                    const valid = data.results.filter(x => x.media_type === 'movie' || x.media_type === 'tv');
+                    // Pass TRUE for isGrid
+                    document.getElementById('search-grid').insertAdjacentHTML('beforeend', valid.map(m => createCardHTML(m, 0, false, true)).join('')); 
+                    searchPage++; 
+                } 
+            } catch(e){} 
+            isLoading = false; 
+            document.getElementById('scroll-loader').classList.add('hidden'); 
+        }
         
         window.play = (id, title, poster, type) => {
             addToHistory(id, title, poster, type);
@@ -372,28 +447,25 @@
         };
 
         async function openSeriesPage(id) {
-            currentSeriesID = id; document.getElementById('home-view').classList.add('hidden'); document.getElementById('search-view').classList.add('hidden'); document.getElementById('series-view').classList.remove('hidden'); window.scrollTo(0,0);
+            currentSeriesID = id; 
+            document.getElementById('home-view').classList.add('hidden'); 
+            document.getElementById('search-view').classList.add('hidden'); 
+            document.getElementById('series-view').classList.remove('hidden'); 
+            window.scrollTo(0,0);
             
             try {
-                const res = await fetch(`https://www.omdbapi.com/?i=${id}&apikey=${KEYS[keyIndex]}`); 
+                const res = await fetch(`${BASE_URL}/tv/${id}?api_key=${API_KEY}`); 
                 const data = await res.json();
-                
-                // ERROR CHECK
-                if(!data || data.Response === "False") {
-                    alert("Error loading series info.");
-                    return;
-                }
-
-                currentSeriesPosterUrl = getImage(data.Poster, true);
-                const bgElement = document.getElementById('series-bg'); const img = new Image(); img.src = currentSeriesPosterUrl;
-                img.onload = () => { bgElement.style.backgroundImage = `url('${currentSeriesPosterUrl}')`; }; img.onerror = () => { bgElement.style.backgroundImage = `url('${PLACEHOLDER_IMG}')`; };
-                document.getElementById('series-poster').src = data.Poster !== "N/A" ? data.Poster : PLACEHOLDER_IMG; 
-                document.getElementById('series-title').innerText = data.Title || "Unknown Title"; 
-                document.getElementById('series-year').innerText = data.Year || "N/A"; 
-                
-                const seasons = parseInt(data.totalSeasons) || 1;
+                if(!data || data.success === false) { alert("Error loading series info."); return; }
+                currentSeriesPosterUrl = data.poster_path ? IMG_BASE + data.poster_path : PLACEHOLDER_IMG;
+                const backdropUrl = data.backdrop_path ? IMG_ORIGINAL + data.backdrop_path : currentSeriesPosterUrl;
+                const bgElement = document.getElementById('series-bg'); 
+                bgElement.style.backgroundImage = `url('${backdropUrl}')`;
+                document.getElementById('series-poster').src = currentSeriesPosterUrl; 
+                document.getElementById('series-title').innerText = data.name || "Unknown Title"; 
+                document.getElementById('series-year').innerText = (data.first_air_date || "").substring(0,4); 
+                const seasons = data.number_of_seasons || 1;
                 document.getElementById('series-seasons').innerText = seasons + " Seasons";
-                
                 const select = document.getElementById('season-select'); select.innerHTML = ''; 
                 for(let i=1; i<=seasons; i++) { select.innerHTML += `<option value="${i}">Season ${i}</option>`; } 
                 window.changeSeason(1);
@@ -402,12 +474,42 @@
 
         window.changeSeason = async (seasonNum) => {
             const list = document.getElementById('episode-list'); list.innerHTML = '<div class="text-center py-8 text-gray-500">Loading episodes...</div>';
-            try { const res = await fetch(`https://www.omdbapi.com/?i=${currentSeriesID}&Season=${seasonNum}&apikey=${KEYS[keyIndex]}`); const data = await res.json(); 
-            if(data.Episodes) { list.innerHTML = data.Episodes.map(ep => `<div class="episode-card flex gap-4 p-4 rounded-xl cursor-pointer group items-center" onclick="window.openPlayerRaw('https://vidsrc.to/embed/tv/${currentSeriesID}/${seasonNum}/${ep.Episode}')"><div class="text-2xl font-bold text-gray-600 w-8 text-center group-hover:text-red-600">${ep.Episode}</div><div class="w-32 h-20 bg-black rounded overflow-hidden shrink-0 relative border border-gray-700"><img src="${currentSeriesPosterUrl}" class="w-full h-full object-cover opacity-50 group-hover:opacity-100 transition" onerror="this.src='${PLACEHOLDER_IMG}'"><div class="absolute inset-0 flex items-center justify-center"><div class="bg-white/10 p-1.5 rounded-full backdrop-blur-sm border border-white/20 group-hover:bg-red-600 group-hover:border-red-600 transition">▶</div></div></div><div class="flex-1"><h3 class="font-bold text-base text-gray-200 group-hover:text-white">${ep.Title}</h3><p class="text-xs text-gray-500 mt-1">${ep.Released}</p></div></div>`).join(''); } 
-            else { list.innerHTML = '<div class="text-center py-8 text-red-500">No episodes found.</div>'; } } catch(e) { list.innerHTML = '<div class="text-center py-8 text-red-500">Error.</div>'; }
+            try { 
+                const res = await fetch(`${BASE_URL}/tv/${currentSeriesID}/season/${seasonNum}?api_key=${API_KEY}`); 
+                const data = await res.json(); 
+                if(data.episodes && data.episodes.length > 0) { 
+                    list.innerHTML = data.episodes.map(ep => {
+                        const epImg = ep.still_path ? IMG_BASE + ep.still_path : currentSeriesPosterUrl;
+                        return `<div class="episode-card flex gap-4 p-4 rounded-xl cursor-pointer group items-center" onclick="window.openPlayerRaw('https://vidsrc.to/embed/tv/${currentSeriesID}/${seasonNum}/${ep.episode_number}')"><div class="text-2xl font-bold text-gray-600 w-8 text-center group-hover:text-red-600">${ep.episode_number}</div><div class="w-32 h-20 bg-black rounded overflow-hidden shrink-0 relative border border-gray-700 hidden md:block"><img src="${epImg}" class="w-full h-full object-cover opacity-50 group-hover:opacity-100 transition" onerror="this.src='${PLACEHOLDER_IMG}'"><div class="absolute inset-0 flex items-center justify-center"><div class="bg-white/10 p-1.5 rounded-full backdrop-blur-sm border border-white/20 group-hover:bg-red-600 group-hover:border-red-600 transition">▶</div></div></div><div class="flex-1"><h3 class="font-bold text-base text-gray-200 group-hover:text-white">${ep.name}</h3><p class="text-xs text-gray-500 mt-1">${ep.air_date || ''}</p></div></div>`;
+                    }).join(''); 
+                } else { list.innerHTML = '<div class="text-center py-8 text-red-500">No episodes found.</div>'; } 
+            } catch(e) { list.innerHTML = '<div class="text-center py-8 text-red-500">Error loading episodes.</div>'; }
         };
+        
         window.openPlayerRaw = (url) => { document.getElementById('player-modal').classList.remove('hidden'); document.getElementById('video-frame').src = url; };
         window.closePlayer = () => { document.getElementById('player-modal').classList.add('hidden'); document.getElementById('video-frame').src = ''; };
+
+        window.showHoverCard = (elem, id, type, title, year, poster) => {
+            clearTimeout(hoverTimeout);
+            hoveredMovieId = id;
+            const rect = elem.getBoundingClientRect();
+            const modal = document.getElementById('hover-modal');
+            const img = document.getElementById('hover-img');
+            img.src = poster;
+            document.getElementById('hover-title').innerText = title;
+            document.getElementById('hover-year').innerText = year;
+            document.getElementById('hover-type').innerText = type;
+            let top = rect.top + window.scrollY - 20;
+            let left = rect.left + window.scrollX - 20;
+            if(left + 280 > window.innerWidth) left = window.innerWidth - 300;
+            if(left < 0) left = 10;
+            modal.style.top = `${top}px`;
+            modal.style.left = `${left}px`;
+            hoverTimeout = setTimeout(() => { modal.classList.add('active'); }, 400);
+        };
+        
+        window.hideHoverCard = () => { clearTimeout(hoverTimeout); document.getElementById('hover-modal').classList.remove('active'); };
+        window.playHovered = () => { if(hoveredMovieId) window.play(hoveredMovieId, document.getElementById('hover-title').innerText, document.getElementById('hover-img').src, document.getElementById('hover-type').innerText); };
 
         window.toggleMenu = () => { document.getElementById('browse-menu').classList.toggle('hidden'); document.getElementById('browse-menu').classList.add('menu-fade-enter-active'); };
         window.toggleMobileMenu = () => { const m = document.getElementById('mobile-menu'); m.classList.toggle('translate-x-full'); m.classList.toggle('translate-x-0'); };
