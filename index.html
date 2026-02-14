@@ -155,10 +155,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        // FIRESTORE
         import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // FIREBASE KEYS
         const firebaseConfig = {
             apiKey: "AIzaSyCBmSIflLemmPA9TXho6sY7iNmeA1KOsc0",
             authDomain: "agastya-tv.firebaseapp.com",
@@ -301,7 +299,12 @@
             
             setTimeout(() => { document.getElementById('skeleton-view').classList.add('hidden'); document.getElementById('home-view').classList.remove('hidden'); }, 5000);
 
-            loadHome(randomTheme).then(success => { if(!success) loadHome('Avengers'); if (hasSeenSplash) { setTimeout(() => { document.getElementById('skeleton-view').classList.add('hidden'); document.getElementById('home-view').classList.remove('hidden'); }, 500); } else { document.getElementById('home-view').classList.remove('hidden'); } });
+            loadHome(randomTheme).then(success => { 
+                if(!success) loadHome('Avengers'); 
+                // Force reveal after load attempt, success or fail
+                document.getElementById('skeleton-view').classList.add('hidden');
+                document.getElementById('home-view').classList.remove('hidden');
+            });
         };
 
         window.toggleMenu = () => { document.getElementById('browse-menu').classList.toggle('hidden'); document.getElementById('browse-menu').classList.add('menu-fade-enter-active'); };
@@ -354,14 +357,10 @@
         function createCardHTML(m, i, isRanked) {
             const poster = m.Poster !== "N/A" ? m.Poster : PLACEHOLDER_IMG;
             const safeTitle = m.Title.replace(/'/g, "&apos;").replace(/"/g, "&quot;");
-            
-            // Fix: Escape single quotes for JS string context
-            const jsTitle = m.Title.replace(/'/g, "\\'"); 
-            
             const hoverEvent = `onmouseenter="window.showHoverCard(this, '${m.imdbID}', '${m.Type}', '${safeTitle}', '${m.Year || ''}', '${poster}')" onmouseleave="window.hideHoverCard()"`;
             
             // Pass all data for saving
-            const clickAttr = `onclick="window.play('${m.imdbID}', '${jsTitle}', '${poster}', '${m.Type}')"`;
+            const clickAttr = `onclick="window.play('${m.imdbID}', '${safeTitle}', '${poster}', '${m.Type}')"`;
 
             if(isRanked) {
                 return `<div class="relative min-w-[160px] h-[240px] movie-card group flex-shrink-0" ${hoverEvent} ${clickAttr}><span class="rank-number">${i + 1}</span><img src="${poster}" class="w-full h-full object-cover rounded-lg relative z-10 shadow-xl ml-6 bg-gray-800 border border-white/5" onerror="this.parentElement.remove()"></div>`;
@@ -379,11 +378,7 @@
             poster.onerror = () => { poster.src = PLACEHOLDER_IMG; };
             document.getElementById('hero-title').innerText = item.Title.toUpperCase();
             document.getElementById('hero-badge-type').innerText = item.Type.toUpperCase();
-            
-            // Fix quotes for hero button too
-            const jsTitle = item.Title.replace(/'/g, "\\'");
-            document.getElementById('hero-play-btn').onclick = () => window.play(item.imdbID, jsTitle, hdUrl, item.Type);
-            
+            document.getElementById('hero-play-btn').onclick = () => window.play(item.imdbID, item.Title, hdUrl, item.Type);
             document.getElementById('hero-section').classList.remove('hidden'); document.getElementById('hero-section').classList.add('flex');
         }
 
@@ -412,20 +407,17 @@
 
         function createGridCard(m) { if(!m.Poster || m.Poster === "N/A") return ''; 
             const safeTitle = m.Title.replace(/'/g, "&apos;").replace(/"/g, "&quot;");
-            // Fix quotes for grid too
-            const jsTitle = m.Title.replace(/'/g, "\\'");
-            return `<div class="group cursor-pointer" onclick="window.play('${m.imdbID}', '${jsTitle}', '${m.Poster}', '${m.Type}')"><div class="relative overflow-hidden rounded-xl aspect-[2/3] mb-3 border border-white/10 shadow-lg bg-gray-800"><img src="${m.Poster}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" onerror="this.closest('.group').remove()"><div class="absolute top-2 right-2 bg-red-600 px-2 py-1 rounded text-[10px] font-bold uppercase">${m.Type}</div></div><h3 class="text-white font-bold truncate group-hover:text-red-500 transition">${m.Title}</h3><p class="text-gray-500 text-sm">${m.Year}</p></div>`; 
+            return `<div class="group cursor-pointer" onclick="window.play('${m.imdbID}', '${safeTitle}', '${m.Poster}', '${m.Type}')"><div class="relative overflow-hidden rounded-xl aspect-[2/3] mb-3 border border-white/10 shadow-lg bg-gray-800"><img src="${m.Poster}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" onerror="this.closest('.group').remove()"><div class="absolute top-2 right-2 bg-red-600 px-2 py-1 rounded text-[10px] font-bold uppercase">${m.Type}</div></div><h3 class="text-white font-bold truncate group-hover:text-red-500 transition">${m.Title}</h3><p class="text-gray-500 text-sm">${m.Year}</p></div>`; 
         }
 
         window.routeClick = (id, type) => { window.play(id, 'Loading...', '', type); };
         
-        // --- GLOBAL PLAY FUNCTION ---
+        // --- GLOBAL PLAY FUNCTION (MOBILE FRIENDLY + HISTORY) ---
         window.play = (id, title, poster, type) => {
             addToHistory(id, title, poster, type);
             if(type === 'series' || type === 'tv') openSeriesPage(id);
             else {
-                // Use VidSrc for mobile compatibility (as requested previously)
-                // If you strictly want 2embed, change this URL back.
+                // Use VidSrc for mobile compatibility
                 const url = `https://vidsrc.to/embed/movie/${id}`;
                 window.openPlayerRaw(url);
             }
