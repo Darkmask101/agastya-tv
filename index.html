@@ -30,7 +30,6 @@
         
         .movie-card { transition: transform 0.3s ease; z-index: 10; position: relative; cursor: pointer; }
         .movie-card:hover { transform: scale(1.05); z-index: 20; }
-        /* Aspect Ratio class for consistent poster sizes */
         .aspect-poster { aspect-ratio: 2 / 3; }
 
         .rank-number { font-size: 120px; font-weight: 900; line-height: 1; -webkit-text-stroke: 4px #333; color: transparent; position: absolute; left: -10px; bottom: -10px; z-index: 0; font-family: impact, sans-serif; opacity: 0.5; }
@@ -147,7 +146,7 @@
     <div id="search-view" class="hidden min-h-screen pt-32 px-6 pb-20 max-w-7xl mx-auto"><div class="text-center mb-16"><h1 id="browse-title" class="text-4xl font-bold mb-6">Find Your Next Favorite</h1><form id="full-search-form" class="max-w-3xl mx-auto"><div class="bg-[#121212] border border-[#333] rounded-xl flex items-center h-16 px-2"><input type="text" id="full-search-input" class="w-full bg-transparent text-white text-lg md:text-xl px-4 focus:outline-none placeholder-gray-600 h-full" placeholder="Search..."><button type="submit" class="bg-red-600 h-12 px-6 rounded-lg font-bold hover:bg-red-700 transition uppercase text-sm md:text-base">Search</button></div></form></div>
     <div id="search-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-6"></div><div id="scroll-loader" class="hidden text-center py-10"><div class="loader"></div><p class="text-gray-500 text-sm">Loading more content...</p></div></div>
     
-    <div id="series-view" class="hidden min-h-screen bg-[#0a0a0a] pb-20"><div class="relative w-full h-[50vh] flex items-end pb-8 overflow-hidden"><div id="series-bg" class="hero-blur-bg opacity-40"></div><div class="hero-gradient"></div><div class="relative z-10 w-full max-w-6xl mx-auto px-6 flex flex-col md:flex-row gap-8 items-end"><img id="series-poster" class="w-40 h-60 object-cover rounded shadow-2xl border border-white/20 hidden md:block bg-gray-800"><div class="mb-2"><h1 id="series-title" class="text-4xl md:text-6xl font-black mb-2 leading-none">TITLE</h1><div class="flex gap-4 text-sm font-bold text-gray-400 mb-6 items-center"><span id="series-year">2023</span><span class="bg-white/10 px-2 py-0.5 rounded text-white border border-white/10">TV-MA</span><span id="series-seasons" class="text-green-500">1 Seasons</span></div></div></div></div><div class="max-w-6xl mx-auto px-6 mt-8"><div class="flex justify-between items-center mb-6 border-b border-gray-800 pb-4"><h2 class="text-2xl font-bold">Episodes</h2><div class="relative"><select id="season-select" onchange="window.changeSeason(this.value)" class="appearance-none bg-[#1a1a1a] border border-gray-700 text-white pl-4 pr-10 py-2 rounded hover:border-gray-500 focus:outline-none cursor-pointer"></select></div></div><div id="episode-list" class="flex flex-col gap-3"></div></div></div>
+    <div id="series-view" class="hidden min-h-screen bg-[#0a0a0a] pb-20"><div class="relative w-full h-[50vh] flex items-end pb-8 overflow-hidden"><div id="series-bg" class="hero-blur-bg opacity-40"></div><div class="hero-gradient"></div><div class="relative z-10 w-full max-w-6xl mx-auto px-6 flex flex-col md:flex-row gap-8 items-end"><img id="series-poster" class="w-40 h-60 object-cover rounded shadow-2xl border border-white/20 hidden md:block bg-gray-800"><div class="mb-2"><h1 id="series-title" class="text-4xl md:text-6xl font-black mb-2 leading-none"></h1><div class="flex gap-4 text-sm font-bold text-gray-400 mb-6 items-center"><span id="series-year"></span><span class="bg-white/10 px-2 py-0.5 rounded text-white border border-white/10">TV-MA</span><span id="series-seasons" class="text-green-500"></span></div></div></div></div><div class="max-w-6xl mx-auto px-6 mt-8"><div class="flex justify-between items-center mb-6 border-b border-gray-800 pb-4"><h2 class="text-2xl font-bold">Episodes</h2><div class="relative"><select id="season-select" onchange="window.changeSeason(this.value)" class="appearance-none bg-[#1a1a1a] border border-gray-700 text-white pl-4 pr-10 py-2 rounded hover:border-gray-500 focus:outline-none cursor-pointer"></select></div></div><div id="episode-list" class="flex flex-col gap-3"></div></div></div>
     <div id="player-modal" class="fixed inset-0 z-[100] hidden bg-black flex flex-col items-center justify-center"><button onclick="window.closePlayer()" class="absolute top-6 right-8 z-50 bg-black/50 text-white w-12 h-12 rounded-full flex items-center justify-center hover:bg-red-600 transition border border-white/20">✕</button><div class="w-full h-full relative"><iframe id="video-frame" class="w-full h-full" src="" frameborder="0" allowfullscreen allow="autoplay; encrypted-media"></iframe></div></div>
 
     <script type="module">
@@ -251,7 +250,14 @@
                     histContainer.id = 'history-row-container';
                     mainContent.prepend(histContainer);
                 }
-                const items = historyData.map(item => ({ 
+                
+                // FILTER: Only keep items with numeric IDs (TMDB) to avoid crashing the player with old OMDb IDs
+                const validItems = historyData.filter(item => {
+                    const idStr = String(item.id);
+                    return !idStr.startsWith('tt') && !isNaN(item.id);
+                });
+
+                const items = validItems.map(item => ({ 
                     id: item.id, 
                     title: item.title, 
                     poster_path: item.poster.replace(IMG_BASE, ''), 
@@ -259,9 +265,12 @@
                     isHistory: true,
                     fullPoster: item.poster 
                 }));
+                
                 if(items.length > 0) {
                     histContainer.innerHTML = '';
                     createRowSection("Continue Watching", items, histContainer, false);
+                } else {
+                   histContainer.innerHTML = '';
                 }
             }
         }
@@ -314,7 +323,6 @@
             container.insertAdjacentHTML('beforeend', html);
         }
 
-        // --- UPDATED CARD GENERATOR FOR RESPONSIVENESS ---
         function createCardHTML(m, i, isRanked, isGrid = false) {
             const poster = m.isHistory ? m.fullPoster : (m.poster_path ? IMG_BASE + m.poster_path : PLACEHOLDER_IMG);
             const title = m.title || m.name || "Unknown";
@@ -322,8 +330,10 @@
             const year = date.split('-')[0];
             const type = m.media_type || (m.title ? 'movie' : 'tv');
             
+            // Safe Strings for onClick
             const safeTitle = title.replace(/'/g, "&apos;").replace(/"/g, "&quot;");
-            const jsTitle = title.replace(/'/g, "\\'"); 
+            // ESCAPE QUOTES FOR JS FUNCTION CALL
+            const jsTitle = title.replace(/'/g, "\\'").replace(/"/g, '&quot;'); 
 
             const hoverEvent = `onmouseenter="window.showHoverCard(this, '${m.id}', '${type}', '${safeTitle}', '${year}', '${poster}')" onmouseleave="window.hideHoverCard()"`;
             const clickAttr = `onclick="window.play('${m.id}', '${jsTitle}', '${poster}', '${type}')"`;
@@ -332,15 +342,12 @@
             let inner = "";
 
             if (isGrid) {
-                // FLUID WIDTH FOR GRID (Fixes the screenshot issue)
                 cardClass = `w-full aspect-poster relative rounded-xl overflow-hidden cursor-pointer movie-card border border-white/5`;
                 inner = `<img src="${poster}" class="w-full h-full object-cover bg-gray-800" onerror="this.src='${PLACEHOLDER_IMG}'"><div class="absolute top-2 right-2 bg-black/60 px-2 py-1 rounded text-[10px] font-bold uppercase border border-white/10 backdrop-blur-md">${type === 'tv' ? 'SERIES' : 'MOVIE'}</div>`;
             } else if (isRanked) {
-                // FIXED WIDTH FOR RANKED SLIDER
                 cardClass = `relative min-w-[150px] md:min-w-[160px] h-[225px] md:h-[240px] movie-card group flex-shrink-0`;
                 inner = `<span class="rank-number">${i + 1}</span><img src="${poster}" class="w-full h-full object-cover rounded-lg relative z-10 shadow-xl ml-6 bg-gray-800 border border-white/5" onerror="this.src='${PLACEHOLDER_IMG}'">`;
             } else {
-                // FIXED WIDTH FOR STANDARD SLIDER
                 cardClass = `min-w-[140px] md:min-w-[200px] h-[210px] md:h-[300px] movie-card relative rounded-xl overflow-hidden cursor-pointer flex-shrink-0 border border-white/5`;
                 inner = `<img src="${poster}" class="w-full h-full object-cover bg-gray-800" onerror="this.src='${PLACEHOLDER_IMG}'"><div class="absolute top-2 right-2 bg-black/60 px-2 py-1 rounded text-[10px] font-bold uppercase border border-white/10 backdrop-blur-md">${type === 'tv' ? 'SERIES' : 'MOVIE'}</div>`;
             }
@@ -361,7 +368,7 @@
             document.getElementById('hero-title').innerText = (item.title || item.name).toUpperCase();
             document.getElementById('hero-desc').innerText = item.overview || "No description available.";
             
-            const jsTitle = (item.title || item.name).replace(/'/g, "\\'");
+            const jsTitle = (item.title || item.name).replace(/'/g, "\\'").replace(/"/g, '&quot;');
             document.getElementById('hero-play-btn').onclick = () => window.play(item.id, jsTitle, posterUrl, 'movie');
             document.getElementById('hero-section').classList.remove('hidden'); document.getElementById('hero-section').classList.add('flex');
         }
@@ -403,7 +410,6 @@
                 const data = await res.json();
                 
                 if(data.results && data.results.length > 0) {
-                    // Pass TRUE for isGrid
                     document.getElementById('search-grid').insertAdjacentHTML('beforeend', data.results.map(m => createCardHTML(m, 0, false, true)).join(''));
                     discoveryPage++;
                 }
@@ -431,7 +437,6 @@
                 const data = await res.json(); 
                 if(data.results && data.results.length > 0) { 
                     const valid = data.results.filter(x => x.media_type === 'movie' || x.media_type === 'tv');
-                    // Pass TRUE for isGrid
                     document.getElementById('search-grid').insertAdjacentHTML('beforeend', valid.map(m => createCardHTML(m, 0, false, true)).join('')); 
                     searchPage++; 
                 } 
@@ -450,22 +455,41 @@
             currentSeriesID = id; 
             document.getElementById('home-view').classList.add('hidden'); 
             document.getElementById('search-view').classList.add('hidden'); 
+            
+            // Clear previous data before showing
+            document.getElementById('series-title').innerText = "";
+            document.getElementById('series-year').innerText = "";
+            document.getElementById('series-seasons').innerText = "";
+            document.getElementById('series-poster').src = PLACEHOLDER_IMG;
+            document.getElementById('episode-list').innerHTML = "";
             document.getElementById('series-view').classList.remove('hidden'); 
             window.scrollTo(0,0);
             
             try {
                 const res = await fetch(`${BASE_URL}/tv/${id}?api_key=${API_KEY}`); 
                 const data = await res.json();
-                if(!data || data.success === false) { alert("Error loading series info."); return; }
+                
+                // If ID is bad or API fails
+                if(!data || data.success === false) { 
+                    alert("Error loading series info. This item might be from an old version. Please use Search to find it again."); 
+                    // Go back home if error
+                    window.initRandomHome();
+                    return; 
+                }
+
                 currentSeriesPosterUrl = data.poster_path ? IMG_BASE + data.poster_path : PLACEHOLDER_IMG;
                 const backdropUrl = data.backdrop_path ? IMG_ORIGINAL + data.backdrop_path : currentSeriesPosterUrl;
+
                 const bgElement = document.getElementById('series-bg'); 
                 bgElement.style.backgroundImage = `url('${backdropUrl}')`;
+                
                 document.getElementById('series-poster').src = currentSeriesPosterUrl; 
                 document.getElementById('series-title').innerText = data.name || "Unknown Title"; 
                 document.getElementById('series-year').innerText = (data.first_air_date || "").substring(0,4); 
+                
                 const seasons = data.number_of_seasons || 1;
                 document.getElementById('series-seasons').innerText = seasons + " Seasons";
+                
                 const select = document.getElementById('season-select'); select.innerHTML = ''; 
                 for(let i=1; i<=seasons; i++) { select.innerHTML += `<option value="${i}">Season ${i}</option>`; } 
                 window.changeSeason(1);
