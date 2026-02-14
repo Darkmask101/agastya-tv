@@ -5,17 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agastya TV</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=Anton&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
     <style>
-        /* BASE STYLES */
         body { background-color: #0a0a0a; color: white; font-family: 'Inter', sans-serif; overflow-x: hidden; }
         
         /* UTILS */
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
         .nav-blur { background: rgba(0,0,0,0.8); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .font-logo { font-family: 'Anton', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
-
+        
         /* HERO & BG */
         .hero-blur-bg { position: absolute; inset: -50px; background-size: cover; background-position: center; filter: blur(60px) brightness(0.25); z-index: 0; transform: scale(1.1); transition: background-image 0.5s ease-in-out; }
         .hero-gradient { position: absolute; inset: 0; background: linear-gradient(to top, #0a0a0a 10%, transparent 100%); z-index: 1; }
@@ -23,26 +21,32 @@
         /* ANIMATIONS */
         @keyframes breathe { 0%, 100% { transform: scale(1); text-shadow: 0 0 20px rgba(220, 38, 38, 0.5); } 50% { transform: scale(1.05); text-shadow: 0 0 40px rgba(220, 38, 38, 0.8); } }
         .animate-breathe { animation: breathe 3s infinite ease-in-out; }
+        .fade-out { opacity: 0; pointer-events: none; transition: opacity 0.5s ease-out; }
         .skeleton { background-color: #1f1f1f; animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
         
         /* CARDS */
         .episode-card { background-color: #181818; border: 1px solid #333; transition: all 0.2s ease; }
         .episode-card:hover { background-color: #222; border-color: #555; transform: scale(1.01); }
-        .movie-card { transition: transform 0.3s ease; z-index: 10; position: relative; cursor: pointer; }
-        .movie-card:hover { transform: scale(1.05); z-index: 20; }
+        .movie-card { transition: transform 0.3s ease; z-index: 10; position: relative; }
+        .movie-card:hover { transform: scale(1.05); z-index: 20; cursor: pointer; }
         .rank-number { font-size: 180px; font-weight: 900; line-height: 1; -webkit-text-stroke: 4px #333; color: transparent; position: absolute; left: -20px; bottom: -20px; z-index: 0; font-family: impact, sans-serif; opacity: 0.5; }
         
-        /* MENUS & UI */
+        /* MENUS */
         .menu-fade-enter-active { opacity: 1; transform: translateY(0); transition: all 0.2s ease; }
         #mobile-menu { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .translate-x-full { transform: translateX(100%); } .translate-x-0 { transform: translateX(0); }
+        
+        /* MISC */
+        .loader { border: 4px solid #333; border-top: 4px solid #dc2626; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        img[src=""] { display: none; } img[src="N/A"] { display: none; }
+        
+        /* AUTH & SLIDERS */
         .auth-input { width: 100%; background: #000; border: 1px solid #333; padding: 12px 16px; border-radius: 8px; color: white; outline: none; transition: border-color 0.2s; }
         .auth-input:focus { border-color: #dc2626; }
         .tab-active { border-bottom: 2px solid #dc2626; color: white; }
         .tab-inactive { color: #888; }
-        
-        /* SLIDERS */
         .slider-arrow { position: absolute; top: 0; bottom: 0; width: 50px; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 40; cursor: pointer; opacity: 0; transition: opacity 0.3s ease; }
         .group:hover .slider-arrow { opacity: 1; }
         .right-arrow { right: 0; background: linear-gradient(to left, #000, transparent); }
@@ -141,12 +145,10 @@
                 <div class="hidden md:block w-72 h-[450px] rounded-lg overflow-hidden shadow-2xl border border-white/10 bg-gray-800 shrink-0 transform rotate-1 hover:rotate-0 transition duration-500"><img id="hero-poster" class="w-full h-full object-cover"></div>
             </div>
         </header>
-        <main id="home-content" class="relative z-20 -mt-10 px-6 pb-20 space-y-16">
-            </main>
+        <main id="home-content" class="relative z-20 -mt-10 px-6 pb-20 space-y-16"></main>
     </div>
 
     <div id="search-view" class="hidden min-h-screen pt-32 px-6 pb-20 max-w-7xl mx-auto"><div class="text-center mb-16"><h1 id="browse-title" class="text-4xl font-bold mb-6">Find Your Next Favorite</h1><form id="full-search-form" class="max-w-3xl mx-auto"><div class="bg-[#121212] border border-[#333] rounded-xl flex items-center h-16"><input type="text" id="full-search-input" class="w-full bg-transparent text-white text-xl px-6 focus:outline-none placeholder-gray-600 h-full" placeholder="Search..."><button type="submit" class="bg-red-600 h-full px-8 font-bold hover:bg-red-700 transition uppercase">Search</button></div></form></div><div id="search-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6"></div><div id="scroll-loader" class="hidden text-center py-10"><div class="loader"></div><p class="text-gray-500 text-sm">Loading more content...</p></div></div>
-    
     <div id="series-view" class="hidden min-h-screen bg-[#0a0a0a] pb-20"><div class="relative w-full h-[50vh] flex items-end pb-8 overflow-hidden"><div id="series-bg" class="hero-blur-bg opacity-40"></div><div class="hero-gradient"></div><div class="relative z-10 w-full max-w-6xl mx-auto px-6 flex flex-col md:flex-row gap-8 items-end"><img id="series-poster" class="w-40 h-60 object-cover rounded shadow-2xl border border-white/20 hidden md:block bg-gray-800"><div class="mb-2"><h1 id="series-title" class="text-4xl md:text-6xl font-black mb-2 leading-none">TITLE</h1><div class="flex gap-4 text-sm font-bold text-gray-400 mb-6 items-center"><span id="series-year">2023</span><span class="bg-white/10 px-2 py-0.5 rounded text-white border border-white/10">TV-MA</span><span id="series-seasons" class="text-green-500">1 Seasons</span></div></div></div></div><div class="max-w-6xl mx-auto px-6 mt-8"><div class="flex justify-between items-center mb-6 border-b border-gray-800 pb-4"><h2 class="text-2xl font-bold">Episodes</h2><div class="relative"><select id="season-select" onchange="window.changeSeason(this.value)" class="appearance-none bg-[#1a1a1a] border border-gray-700 text-white pl-4 pr-10 py-2 rounded hover:border-gray-500 focus:outline-none cursor-pointer"></select></div></div><div id="episode-list" class="flex flex-col gap-3"></div></div></div>
     <div id="player-modal" class="fixed inset-0 z-[100] hidden bg-black flex flex-col items-center justify-center"><button onclick="window.closePlayer()" class="absolute top-6 right-8 z-50 bg-black/50 text-white w-12 h-12 rounded-full flex items-center justify-center hover:bg-red-600 transition border border-white/20">✕</button><div class="w-full h-full relative"><iframe id="video-frame" class="w-full h-full" src="" frameborder="0" allowfullscreen allow="autoplay; encrypted-media"></iframe></div></div>
 
@@ -352,10 +354,14 @@
         function createCardHTML(m, i, isRanked) {
             const poster = m.Poster !== "N/A" ? m.Poster : PLACEHOLDER_IMG;
             const safeTitle = m.Title.replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+            
+            // Fix: Escape single quotes for JS string context
+            const jsTitle = m.Title.replace(/'/g, "\\'"); 
+            
             const hoverEvent = `onmouseenter="window.showHoverCard(this, '${m.imdbID}', '${m.Type}', '${safeTitle}', '${m.Year || ''}', '${poster}')" onmouseleave="window.hideHoverCard()"`;
             
             // Pass all data for saving
-            const clickAttr = `onclick="window.play('${m.imdbID}', '${safeTitle}', '${poster}', '${m.Type}')"`;
+            const clickAttr = `onclick="window.play('${m.imdbID}', '${jsTitle}', '${poster}', '${m.Type}')"`;
 
             if(isRanked) {
                 return `<div class="relative min-w-[160px] h-[240px] movie-card group flex-shrink-0" ${hoverEvent} ${clickAttr}><span class="rank-number">${i + 1}</span><img src="${poster}" class="w-full h-full object-cover rounded-lg relative z-10 shadow-xl ml-6 bg-gray-800 border border-white/5" onerror="this.parentElement.remove()"></div>`;
@@ -373,7 +379,11 @@
             poster.onerror = () => { poster.src = PLACEHOLDER_IMG; };
             document.getElementById('hero-title').innerText = item.Title.toUpperCase();
             document.getElementById('hero-badge-type').innerText = item.Type.toUpperCase();
-            document.getElementById('hero-play-btn').onclick = () => window.play(item.imdbID, item.Title, hdUrl, item.Type);
+            
+            // Fix quotes for hero button too
+            const jsTitle = item.Title.replace(/'/g, "\\'");
+            document.getElementById('hero-play-btn').onclick = () => window.play(item.imdbID, jsTitle, hdUrl, item.Type);
+            
             document.getElementById('hero-section').classList.remove('hidden'); document.getElementById('hero-section').classList.add('flex');
         }
 
@@ -402,7 +412,9 @@
 
         function createGridCard(m) { if(!m.Poster || m.Poster === "N/A") return ''; 
             const safeTitle = m.Title.replace(/'/g, "&apos;").replace(/"/g, "&quot;");
-            return `<div class="group cursor-pointer" onclick="window.play('${m.imdbID}', '${safeTitle}', '${m.Poster}', '${m.Type}')"><div class="relative overflow-hidden rounded-xl aspect-[2/3] mb-3 border border-white/10 shadow-lg bg-gray-800"><img src="${m.Poster}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" onerror="this.closest('.group').remove()"><div class="absolute top-2 right-2 bg-red-600 px-2 py-1 rounded text-[10px] font-bold uppercase">${m.Type}</div></div><h3 class="text-white font-bold truncate group-hover:text-red-500 transition">${m.Title}</h3><p class="text-gray-500 text-sm">${m.Year}</p></div>`; 
+            // Fix quotes for grid too
+            const jsTitle = m.Title.replace(/'/g, "\\'");
+            return `<div class="group cursor-pointer" onclick="window.play('${m.imdbID}', '${jsTitle}', '${m.Poster}', '${m.Type}')"><div class="relative overflow-hidden rounded-xl aspect-[2/3] mb-3 border border-white/10 shadow-lg bg-gray-800"><img src="${m.Poster}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" onerror="this.closest('.group').remove()"><div class="absolute top-2 right-2 bg-red-600 px-2 py-1 rounded text-[10px] font-bold uppercase">${m.Type}</div></div><h3 class="text-white font-bold truncate group-hover:text-red-500 transition">${m.Title}</h3><p class="text-gray-500 text-sm">${m.Year}</p></div>`; 
         }
 
         window.routeClick = (id, type) => { window.play(id, 'Loading...', '', type); };
@@ -411,7 +423,12 @@
         window.play = (id, title, poster, type) => {
             addToHistory(id, title, poster, type);
             if(type === 'series' || type === 'tv') openSeriesPage(id);
-            else window.openPlayerRaw(`https://www.2embed.cc/embed/${id}`);
+            else {
+                // Use VidSrc for mobile compatibility (as requested previously)
+                // If you strictly want 2embed, change this URL back.
+                const url = `https://vidsrc.to/embed/movie/${id}`;
+                window.openPlayerRaw(url);
+            }
         };
 
         async function openSeriesPage(id) {
@@ -425,7 +442,7 @@
         }
         window.changeSeason = async (seasonNum) => {
             const list = document.getElementById('episode-list'); list.innerHTML = '<div class="text-center py-8 text-gray-500">Loading episodes...</div>';
-            try { const res = await fetch(`https://www.omdbapi.com/?i=${currentSeriesID}&Season=${seasonNum}&apikey=${API_KEY}`); const data = await res.json(); if(data.Episodes) { list.innerHTML = data.Episodes.map(ep => `<div class="episode-card flex gap-4 p-4 rounded-xl cursor-pointer group items-center" onclick="window.openPlayerRaw('https://www.2embed.cc/embed/${currentSeriesID}/${seasonNum}/${ep.Episode}')"><div class="text-2xl font-bold text-gray-600 w-8 text-center group-hover:text-red-600">${ep.Episode}</div><div class="w-32 h-20 bg-black rounded overflow-hidden shrink-0 relative border border-gray-700"><img src="${currentSeriesPosterUrl}" class="w-full h-full object-cover opacity-50 group-hover:opacity-100 transition" onerror="this.src='${PLACEHOLDER_IMG}'"><div class="absolute inset-0 flex items-center justify-center"><div class="bg-white/10 p-1.5 rounded-full backdrop-blur-sm border border-white/20 group-hover:bg-red-600 group-hover:border-red-600 transition">▶</div></div></div><div class="flex-1"><h3 class="font-bold text-base text-gray-200 group-hover:text-white">${ep.Title}</h3><p class="text-xs text-gray-500 mt-1">${ep.Released}</p></div></div>`).join(''); } else { list.innerHTML = '<div class="text-center py-8 text-red-500">No episodes found.</div>'; } } catch(e) { list.innerHTML = '<div class="text-center py-8 text-red-500">Error.</div>'; }
+            try { const res = await fetch(`https://www.omdbapi.com/?i=${currentSeriesID}&Season=${seasonNum}&apikey=${API_KEY}`); const data = await res.json(); if(data.Episodes) { list.innerHTML = data.Episodes.map(ep => `<div class="episode-card flex gap-4 p-4 rounded-xl cursor-pointer group items-center" onclick="window.openPlayerRaw('https://vidsrc.to/embed/tv/${currentSeriesID}/${seasonNum}/${ep.Episode}')"><div class="text-2xl font-bold text-gray-600 w-8 text-center group-hover:text-red-600">${ep.Episode}</div><div class="w-32 h-20 bg-black rounded overflow-hidden shrink-0 relative border border-gray-700"><img src="${currentSeriesPosterUrl}" class="w-full h-full object-cover opacity-50 group-hover:opacity-100 transition" onerror="this.src='${PLACEHOLDER_IMG}'"><div class="absolute inset-0 flex items-center justify-center"><div class="bg-white/10 p-1.5 rounded-full backdrop-blur-sm border border-white/20 group-hover:bg-red-600 group-hover:border-red-600 transition">▶</div></div></div><div class="flex-1"><h3 class="font-bold text-base text-gray-200 group-hover:text-white">${ep.Title}</h3><p class="text-xs text-gray-500 mt-1">${ep.Released}</p></div></div>`).join(''); } else { list.innerHTML = '<div class="text-center py-8 text-red-500">No episodes found.</div>'; } } catch(e) { list.innerHTML = '<div class="text-center py-8 text-red-500">Error.</div>'; }
         };
         window.openPlayerRaw = (url) => { document.getElementById('player-modal').classList.remove('hidden'); document.getElementById('video-frame').src = url; };
         window.closePlayer = () => { document.getElementById('player-modal').classList.add('hidden'); document.getElementById('video-frame').src = ''; };
