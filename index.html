@@ -6,6 +6,11 @@
     <title>Agastya TV</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=Anton&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
     <style>
         body { background-color: #0a0a0a; color: white; font-family: 'Inter', sans-serif; overflow-x: hidden; }
         
@@ -164,11 +169,8 @@
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
+    <script>
+        // CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyCBmSIflLemmPA9TXho6sY7iNmeA1KOsc0",
             authDomain: "agastya-tv.firebaseapp.com",
@@ -179,9 +181,10 @@
             measurementId: "G-X828VGBY0B"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        // Initialize Firebase Global
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
         // TMDB CONFIG
         const API_KEY = 'a2971dc1f1c0eba47eddeb62eacd078e';
@@ -191,6 +194,7 @@
         
         const PLACEHOLDER_IMG = "https://via.placeholder.com/300x450/000000/FFFFFF?text=AGASTYA+TV";
         
+        // APP STATE
         let currentMode = 'home'; 
         let discoveryType = 'movie'; 
         let discoveryPage = 1; 
@@ -205,8 +209,6 @@
         // PLAYER STATE
         let currentPlaying = { id: null, type: null, season: null, episode: null };
         let activeServer = 'vidlink'; 
-        
-        // --- OPTIMIZED ACTIVITY TIMER (Prevents Lag) ---
         let lastActivityTime = Date.now();
         let playerCheckInterval;
 
@@ -226,11 +228,11 @@
             if(tab === 'login') { document.getElementById('form-login').classList.remove('hidden'); document.getElementById('form-signup').classList.add('hidden'); document.getElementById('tab-login').className = "pb-3 px-4 text-sm font-bold tab-active transition"; document.getElementById('tab-signup').className = "pb-3 px-4 text-sm font-bold tab-inactive transition"; } 
             else { document.getElementById('form-login').classList.add('hidden'); document.getElementById('form-signup').classList.remove('hidden'); document.getElementById('tab-login').className = "pb-3 px-4 text-sm font-bold tab-inactive transition"; document.getElementById('tab-signup').className = "pb-3 px-4 text-sm font-bold tab-active transition"; }
         };
-        window.handleSignup = async () => { const user = document.getElementById('signup-user').value; const email = document.getElementById('signup-email').value; const pass = document.getElementById('signup-pass').value; try { const userCredential = await createUserWithEmailAndPassword(auth, email, pass); await updateProfile(userCredential.user, { displayName: user }); window.closeAuthModal(); alert("Account created!"); } catch (error) { alert(error.message); } };
-        window.handleLogin = async () => { const email = document.getElementById('login-email').value; const pass = document.getElementById('login-pass').value; try { await signInWithEmailAndPassword(auth, email, pass); window.closeAuthModal(); } catch (error) { alert(error.message); } };
-        window.logout = () => signOut(auth);
+        window.handleSignup = async () => { const user = document.getElementById('signup-user').value; const email = document.getElementById('signup-email').value; const pass = document.getElementById('signup-pass').value; try { const userCredential = await auth.createUserWithEmailAndPassword(email, pass); await userCredential.user.updateProfile({ displayName: user }); window.closeAuthModal(); alert("Account created!"); } catch (error) { alert(error.message); } };
+        window.handleLogin = async () => { const email = document.getElementById('login-email').value; const pass = document.getElementById('login-pass').value; try { await auth.signInWithEmailAndPassword(email, pass); window.closeAuthModal(); } catch (error) { alert(error.message); } };
+        window.logout = () => auth.signOut();
         
-        onAuthStateChanged(auth, async (user) => { 
+        auth.onAuthStateChanged(async (user) => { 
             const authDiv = document.getElementById('auth-section'); 
             const mobBtn = document.getElementById('mobile-auth-btn'); 
             if (user) { 
@@ -249,7 +251,7 @@
         async function addToHistory(id, title, poster, type) {
             const user = auth.currentUser;
             if(!user) return; 
-            const userRef = doc(db, "users", user.uid);
+            const userRef = db.collection("users").doc(user.uid);
             try {
                 let runtime = 0;
                 if (type === 'movie') {
@@ -257,24 +259,22 @@
                         const res = await fetch(`${BASE_URL}/movie/${id}?api_key=${API_KEY}`);
                         const data = await res.json();
                         runtime = data.runtime || 0;
-                    } catch (e) {
-                        console.error("Error fetching movie runtime:", e);
-                    }
+                    } catch (e) { console.error("Error fetching runtime:", e); }
                 }
 
-                const docSnap = await getDoc(userRef);
+                const docSnap = await userRef.get();
                 let currentHistory = [];
-                if (docSnap.exists() && docSnap.data().watchHistory) { currentHistory = docSnap.data().watchHistory; }
+                if (docSnap.exists && docSnap.data().watchHistory) { currentHistory = docSnap.data().watchHistory; }
                 const newHistory = currentHistory.filter(item => item.id != id); 
                 newHistory.push({ id, title, poster, type, timestamp: Date.now(), runtime: runtime });
-                await setDoc(userRef, { watchHistory: newHistory }, { merge: true });
+                await userRef.set({ watchHistory: newHistory }, { merge: true });
                 loadUserHistory(user.uid);
             } catch(e) { console.log(e); }
         }
 
         async function loadUserHistory(uid) {
-            const docSnap = await getDoc(doc(db, "users", uid));
-            if (docSnap.exists() && docSnap.data().watchHistory) {
+            const docSnap = await db.collection("users").doc(uid).get();
+            if (docSnap.exists && docSnap.data().watchHistory) {
                 const historyData = docSnap.data().watchHistory;
                 historyData.sort((a, b) => b.timestamp - a.timestamp); 
                 
@@ -382,25 +382,16 @@
             container.insertAdjacentHTML('beforeend', html);
         }
 
-        // --- FIXED: CRASH-PROOF CARD GENERATION ---
         function createCardHTML(m, i, isRanked, isGrid = false) {
             const poster = m.isHistory ? m.fullPoster : (m.poster_path ? IMG_BASE + m.poster_path : PLACEHOLDER_IMG);
             const title = m.title || m.name || "Unknown";
             const date = m.release_date || m.first_air_date || '';
             const year = date.split('-')[0];
             const type = m.media_type || (m.title ? 'movie' : 'tv');
-            
-            // Safe Strings for Data Attributes (HTML Escape Only)
             const safeTitle = title.replace(/"/g, "&quot;");
-            
-            // JS Click Handler needs escaped quotes
             const jsTitle = title.replace(/'/g, "\\'").replace(/"/g, '&quot;'); 
-
-            // FIX: Using data attributes instead of inline JS arguments to prevent quote crashes
             const hoverEvent = `onmouseenter="window.showHoverCard(this)" onmouseleave="window.hideHoverCard()"`;
             const clickAttr = `onclick="window.play('${m.id}', '${jsTitle}', '${poster}', '${type}')"`;
-            
-            // Store data in DOM
             const dataAttrs = `data-id="${m.id}" data-type="${type}" data-title="${safeTitle}" data-year="${year}" data-poster="${poster}"`;
 
             let cardClass = "";
@@ -423,16 +414,12 @@
         function setupHero(item) {
             const hdUrl = item.backdrop_path ? IMG_ORIGINAL + item.backdrop_path : (item.poster_path ? IMG_ORIGINAL + item.poster_path : PLACEHOLDER_IMG);
             const posterUrl = item.poster_path ? IMG_BASE + item.poster_path : PLACEHOLDER_IMG;
-            
             const bg = document.getElementById('hero-bg'); 
             const poster = document.getElementById('hero-poster');
-            
             bg.style.backgroundImage = `url('${hdUrl}')`;
             poster.src = posterUrl;
-            
             document.getElementById('hero-title').innerText = (item.title || item.name).toUpperCase();
             document.getElementById('hero-desc').innerText = item.overview || "No description available.";
-            
             const jsTitle = (item.title || item.name).replace(/'/g, "\\'").replace(/"/g, '&quot;');
             document.getElementById('hero-play-btn').onclick = () => window.play(item.id, jsTitle, posterUrl, 'movie');
             document.getElementById('hero-section').classList.remove('hidden'); document.getElementById('hero-section').classList.add('flex');
@@ -468,12 +455,10 @@
             if(isLoading) return;
             isLoading = true; 
             document.getElementById('scroll-loader').classList.remove('hidden');
-            
             try {
                 const endpoint = discoveryType === 'movie' ? 'movie/popular' : 'tv/popular';
                 const res = await fetch(`${BASE_URL}/${endpoint}?api_key=${API_KEY}&page=${discoveryPage}`);
                 const data = await res.json();
-                
                 if(data.results && data.results.length > 0) {
                     document.getElementById('search-grid').insertAdjacentHTML('beforeend', data.results.map(m => createCardHTML(m, 0, false, true)).join(''));
                     discoveryPage++;
@@ -508,8 +493,6 @@
             isLoading = false; 
             document.getElementById('scroll-loader').classList.add('hidden'); 
         }
-        
-        // --- IMPROVED PLAYER LOGIC ---
         
         window.play = (id, title, poster, type) => {
             addToHistory(id, title, poster, type);
@@ -556,35 +539,23 @@
         function loadServer() {
             const frame = document.getElementById('video-frame');
             let url = "";
-
             if (activeServer === 'vidlink') {
-                if(currentPlaying.type === 'movie') {
-                    url = `https://vidlink.pro/movie/${currentPlaying.id}`;
-                } else {
-                    url = `https://vidlink.pro/tv/${currentPlaying.id}/${currentPlaying.season}/${currentPlaying.episode}`;
-                }
+                if(currentPlaying.type === 'movie') { url = `https://vidlink.pro/movie/${currentPlaying.id}`; } 
+                else { url = `https://vidlink.pro/tv/${currentPlaying.id}/${currentPlaying.season}/${currentPlaying.episode}`; }
             } else {
-                if(currentPlaying.type === 'movie') {
-                    url = `https://vidsrc.xyz/embed/movie/${currentPlaying.id}`;
-                } else {
-                    url = `https://vidsrc.xyz/embed/tv/${currentPlaying.id}/${currentPlaying.season}/${currentPlaying.episode}`;
-                }
+                if(currentPlaying.type === 'movie') { url = `https://vidsrc.xyz/embed/movie/${currentPlaying.id}`; } 
+                else { url = `https://vidsrc.xyz/embed/tv/${currentPlaying.id}/${currentPlaying.season}/${currentPlaying.episode}`; }
             }
             frame.src = url;
         }
         
-        // --- LAG-FREE ACTIVITY TRACKER ---
         function updateLastActivity() {
             lastActivityTime = Date.now();
             const controls = document.getElementById('player-controls');
             const btn = document.getElementById('switch-btn');
-            
             if(controls && controls.classList.contains('opacity-0')) {
                 controls.classList.remove('opacity-0');
-                if(btn) {
-                    btn.classList.add('pointer-events-auto');
-                    btn.classList.remove('pointer-events-none');
-                }
+                if(btn) { btn.classList.add('pointer-events-auto'); btn.classList.remove('pointer-events-none'); }
             }
         }
 
@@ -593,7 +564,6 @@
             window.addEventListener('click', updateLastActivity);
             window.addEventListener('keydown', updateLastActivity);
             window.addEventListener('touchstart', updateLastActivity);
-
             if(playerCheckInterval) clearInterval(playerCheckInterval);
             playerCheckInterval = setInterval(() => {
                 if (Date.now() - lastActivityTime > 3000) { 
@@ -601,10 +571,7 @@
                     const btn = document.getElementById('switch-btn');
                     if(controls && !controls.classList.contains('opacity-0')) {
                         controls.classList.add('opacity-0');
-                        if(btn) {
-                            btn.classList.remove('pointer-events-auto');
-                            btn.classList.add('pointer-events-none');
-                        }
+                        if(btn) { btn.classList.remove('pointer-events-auto'); btn.classList.add('pointer-events-none'); }
                     }
                 }
             }, 1000);
@@ -614,7 +581,6 @@
             currentSeriesID = id; 
             document.getElementById('home-view').classList.add('hidden'); 
             document.getElementById('search-view').classList.add('hidden'); 
-            
             document.getElementById('series-title').innerText = "";
             document.getElementById('series-year').innerText = "";
             document.getElementById('series-seasons').innerText = "";
@@ -622,30 +588,19 @@
             document.getElementById('episode-list').innerHTML = "";
             document.getElementById('series-view').classList.remove('hidden'); 
             window.scrollTo(0,0);
-            
             try {
                 const res = await fetch(`${BASE_URL}/tv/${id}?api_key=${API_KEY}`); 
                 const data = await res.json();
-                
-                if(!data || data.success === false) { 
-                    alert("Error loading series info."); 
-                    window.initRandomHome();
-                    return; 
-                }
-
+                if(!data || data.success === false) { alert("Error loading series info."); window.initRandomHome(); return; }
                 currentSeriesPosterUrl = data.poster_path ? IMG_BASE + data.poster_path : PLACEHOLDER_IMG;
                 const backdropUrl = data.backdrop_path ? IMG_ORIGINAL + data.backdrop_path : currentSeriesPosterUrl;
-
                 const bgElement = document.getElementById('series-bg'); 
                 bgElement.style.backgroundImage = `url('${backdropUrl}')`;
-                
                 document.getElementById('series-poster').src = currentSeriesPosterUrl; 
                 document.getElementById('series-title').innerText = data.name || "Unknown Title"; 
                 document.getElementById('series-year').innerText = (data.first_air_date || "").substring(0,4); 
-                
                 const seasons = data.number_of_seasons || 1;
                 document.getElementById('series-seasons').innerText = seasons + " Seasons";
-                
                 const select = document.getElementById('season-select'); select.innerHTML = ''; 
                 for(let i=1; i<=seasons; i++) { select.innerHTML += `<option value="${i}">Season ${i}</option>`; } 
                 window.changeSeason(1);
@@ -655,40 +610,21 @@
         window.changeSeason = async (seasonNum) => {
             const list = document.getElementById('episode-list'); 
             list.innerHTML = '<div class="text-center py-8 text-gray-500">Loading episodes...</div>';
-            
             try { 
                 const res = await fetch(`${BASE_URL}/tv/${currentSeriesID}/season/${seasonNum}?api_key=${API_KEY}`); 
                 const data = await res.json(); 
-                
                 if(data.episodes && data.episodes.length > 0) { 
                     list.innerHTML = data.episodes.map(ep => {
                         const epImg = ep.still_path ? IMG_BASE + ep.still_path : currentSeriesPosterUrl;
-                        return `<div class="episode-card flex gap-4 p-4 rounded-xl cursor-pointer group items-center" onclick="window.playEpisode('${seasonNum}', '${ep.episode_number}')">
-                                    <div class="text-2xl font-bold text-gray-600 w-8 text-center group-hover:text-red-600">${ep.episode_number}</div>
-                                    <div class="w-32 h-20 bg-black rounded overflow-hidden shrink-0 relative border border-gray-700 hidden md:block">
-                                        <img src="${epImg}" class="w-full h-full object-cover opacity-50 group-hover:opacity-100 transition" onerror="this.src='${PLACEHOLDER_IMG}'">
-                                        <div class="absolute inset-0 flex items-center justify-center">
-                                            <div class="bg-white/10 p-1.5 rounded-full backdrop-blur-sm border border-white/20 group-hover:bg-red-600 group-hover:border-red-600 transition">▶</div>
-                                        </div>
-                                    </div>
-                                    <div class="flex-1">
-                                        <h3 class="font-bold text-base text-gray-200 group-hover:text-white">${ep.name}</h3>
-                                        <p class="text-xs text-gray-500 mt-1">${ep.air_date || ''}</p>
-                                    </div>
-                                </div>`;
+                        return `<div class="episode-card flex gap-4 p-4 rounded-xl cursor-pointer group items-center" onclick="window.playEpisode('${seasonNum}', '${ep.episode_number}')"><div class="text-2xl font-bold text-gray-600 w-8 text-center group-hover:text-red-600">${ep.episode_number}</div><div class="w-32 h-20 bg-black rounded overflow-hidden shrink-0 relative border border-gray-700 hidden md:block"><img src="${epImg}" class="w-full h-full object-cover opacity-50 group-hover:opacity-100 transition" onerror="this.src='${PLACEHOLDER_IMG}'"><div class="absolute inset-0 flex items-center justify-center"><div class="bg-white/10 p-1.5 rounded-full backdrop-blur-sm border border-white/20 group-hover:bg-red-600 group-hover:border-red-600 transition">▶</div></div></div><div class="flex-1"><h3 class="font-bold text-base text-gray-200 group-hover:text-white">${ep.name}</h3><p class="text-xs text-gray-500 mt-1">${ep.air_date || ''}</p></div></div>`;
                     }).join(''); 
-                } else { 
-                    list.innerHTML = '<div class="text-center py-8 text-red-500">No episodes found.</div>'; 
-                } 
-            } catch(e) { 
-                list.innerHTML = '<div class="text-center py-8 text-red-500">Error loading episodes.</div>'; 
-            }
+                } else { list.innerHTML = '<div class="text-center py-8 text-red-500">No episodes found.</div>'; } 
+            } catch(e) { list.innerHTML = '<div class="text-center py-8 text-red-500">Error loading episodes.</div>'; }
         };
         
         window.closePlayer = () => { 
             document.getElementById('player-modal').classList.add('hidden'); 
             document.getElementById('video-frame').src = '';
-            
             window.removeEventListener('mousemove', updateLastActivity);
             window.removeEventListener('click', updateLastActivity);
             window.removeEventListener('keydown', updateLastActivity);
@@ -696,33 +632,24 @@
             clearInterval(playerCheckInterval);
         };
 
-        // --- FIXED: READS FROM DATA ATTRIBUTES TO PREVENT CRASHES ---
         window.showHoverCard = (elem) => {
-            // FIX: Disable on mobile/small screens (Android fix)
             if (window.innerWidth < 768) return; 
-
             clearTimeout(hoverTimeout);
             const { id, type, title, year, poster } = elem.dataset;
             hoveredMovieId = id;
-            
             const rect = elem.getBoundingClientRect();
             const modal = document.getElementById('hover-modal');
             const img = document.getElementById('hover-img');
-            
             img.src = poster;
             document.getElementById('hover-title').innerText = title;
             document.getElementById('hover-year').innerText = year;
             document.getElementById('hover-type').innerText = type;
-            
             let top = rect.top + window.scrollY - 20;
             let left = rect.left + window.scrollX - 20;
-            
             if(left + 280 > window.innerWidth) left = window.innerWidth - 300;
             if(left < 0) left = 10;
-            
             modal.style.top = `${top}px`;
             modal.style.left = `${left}px`;
-            
             hoverTimeout = setTimeout(() => { modal.classList.add('active'); }, 400);
         };
         
