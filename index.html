@@ -791,8 +791,7 @@ footer{padding:4rem;background:var(--ink-2);border-top:1px solid var(--border)}
 </div>
 
 <script>
-const API_KEY='eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJhMjk3MWRjMWYxYzBlYmE0N2VkZGViNjJlYWNkMDc4ZSIsIm5iZiI6MTc3MTA2MTExMC4wMDg5OTk4LCJzdWIiOiI2OTkwM2Y3NmE0OThlZDQ3YzY4Yzk1MDciLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.ulJzwhSicEjy9xBDkCsL_IUgriJUgpOK34mLd9ZuaDc';
-const BASE='https://api.themoviedb.org/3';
+const BASE='https://agastya-tviio.biswasanindita090.workers.dev/tmdb';
 const IMG='https://image.tmdb.org/t/p/';
 
 let heroData=null,heroPicks=[],heroIdx=0,heroTimer=null;
@@ -802,7 +801,7 @@ let continueList=JSON.parse(localStorage.getItem('agastya_continue')||'[]');
 let searchTimer=null,activeMoodChip=null;
 
 async function tmdb(path){
-  const r=await fetch(`${BASE}${path}`,{headers:{Authorization:`Bearer ${API_KEY}`}});
+  const r=await fetch(`${BASE}${path}`);
   return r.json();
 }
 const img=(p,s='w500')=>p?`${IMG}${s}${p}`:'https://via.placeholder.com/300x450/1C1C28/C9A84C?text=No+Image';
